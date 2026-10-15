@@ -93,7 +93,7 @@
             <button class="btn" (click)="openRow('edit')" [disabled]="isSaving || !selectedRow">✎ Edit selected</button>
             <button class="btn btn-danger-ghost" (click)="deleteRow()" [disabled]="isSaving || !selectedRow">⌫ Delete selected</button>
           </div>
-          <input class="search-input" [(ngModel)]="searchText" placeholder="⌕  Search records…" aria-label="Search table data">
+          <input class="search-input" [ngModel]="searchText" (ngModelChange)="updateSearch($event)" placeholder="⌕  Search records…" aria-label="Search table data">
         </div>
         <div class="grid-shell data-grid">
           <ag-grid-angular
