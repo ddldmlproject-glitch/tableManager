@@ -49,6 +49,8 @@ export class AppComponent {
   get tables(): TableSchema[] { return this.mockDb.tables; }
   get table(): TableSchema { return this.mockDb.tableByName(this.selectedTableName) ?? this.tables[0]; }
   get liveColumns(): ColumnDefinition[] { return this.table.columns.filter(c => c.status !== 'dropped'); }
+  get primaryKeyName(): string { return this.liveColumns.find(c => c.primaryKey)?.name ?? '—'; }
+  get hasDroppedColumns(): boolean { return this.table.columns.some(c => c.status === 'dropped'); }
   get stagedCount(): number { return this.table.columns.filter(c => !!c.status).length; }
   get rows(): TableRow[] {
     const term = this.searchText.trim().toLowerCase();
