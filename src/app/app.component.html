@@ -1,0 +1,139 @@
+<div class="app">
+  <header class="topbar">
+    <div class="logo">citi<span>.</span></div><div class="brand">Oracle Schema Manager <small>DATA PLATFORM TOOLS</small></div>
+    <div class="top-fill"></div><span class="env">● DEMO ENVIRONMENT</span><button class="btn btn-primary" (click)="openCreate()">＋ New Table</button>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="side-caption">SELECT TABLE</div>
+      <select class="table-select" [ngModel]="selectedTableName" (ngModelChange)="selectTable($event)">
+        <option *ngFor="let t of tables" [value]="t.name">{{ t.name }}</option>
+      </select>
+      <div class="side-caption section-gap">TABLE OVERVIEW</div>
+      <div class="overview">
+        <div><span>Schema owner</span><b>{{ table.schema }}</b></div>
+        <div><span>Table name</span><b>{{ table.name }}</b></div>
+        <div><span>Columns</span><b>{{ liveColumns.length }}</b></div>
+        <div><span>Primary key</span><b>{{ liveColumns.find(c => c.primaryKey)?.name || '—' }}</b></div>
+        <div><span>Pending changes</span><b [class.warn]="stagedCount">{{ stagedCount }}</b></div>
+      </div>
+      <div class="side-caption section-gap">WORKSPACE</div>
+      <button class="nav-item" [class.active]="page === 'schema'" (click)="page = 'schema'"><span>▤</span> Schema Editor</button>
+      <button class="nav-item" [class.active]="page === 'data'" (click)="page = 'data'"><span>▦</span> Table Data <em>DML</em></button>
+      <button class="nav-item" [class.active]="page === 'create'" (click)="openCreate()"><span>＋</span> Create Table <em>DDL</em></button>
+      <div class="sidebar-bottom"><i></i> Local sample data <small>No database connection</small></div>
+    </aside>
+    <main class="content">
+      <ng-container *ngIf="page === 'schema'">
+        <div class="page-head">
+          <div><div class="eyebrow">SCHEMA MANAGEMENT / EXISTING TABLE</div><h1>{{ table.schema }}.<strong>{{ table.name }}</strong></h1><p>Review and stage schema changes before applying them to the local demo state.</p></div>
+          <div class="head-actions"><button class="btn" (click)="discardChanges()">Discard changes</button><button class="btn btn-primary" (click)="applySchemaChanges()">✓ Apply changes <b *ngIf="stagedCount">{{ stagedCount }}</b></button></div>
+        </div>
+        <section class="metric-row">
+          <div class="metric"><span>TABLE COLUMNS</span><strong>{{ liveColumns.length }}</strong><small>Active schema fields</small></div>
+          <div class="metric"><span>PRIMARY KEY</span><strong class="metric-text">{{ liveColumns.find(c => c.primaryKey)?.name || 'Not set' }}</strong><small>Unique row identifier</small></div>
+          <div class="metric"><span>SCHEMA CHANGES</span><strong>{{ stagedCount }}</strong><small>{{ stagedCount ? 'Awaiting apply or discard' : 'No pending changes' }}</small></div>
+          <div class="metric"><span>DATABASE</span><strong class="metric-text">Oracle</strong><small>Mock mode · API pending</small></div>
+        </section>
+        <section class="panel">
+          <div class="panel-title"><div class="title-icon">▦</div><div><h2>Column Definitions</h2><p>Manage metadata, data types and constraints for this table.</p></div><span class="count">{{ liveColumns.length }} COLUMNS</span></div>
+          <div class="toolbar"><div class="tool-group"><button class="btn btn-primary" (click)="openAddColumn()">＋ Add column</button><button class="btn" (click)="openEditColumn()">✎ Edit selected</button><button class="btn btn-danger-ghost" (click)="stageDropColumn()">⌫ Stage delete</button></div><span class="toolbar-hint">Select a column row to enable actions</span></div>
+          <div class="grid-shell schema-grid">
+            <ag-grid-angular [theme]="gridTheme" [rowData]="table.columns" [columnDefs]="schemaColDefs" [defaultColDef]="schemaDefaultColDef" [rowSelection]="rowSelection" (selectionChanged)="onSchemaSelection($event)" [animateRows]="true"></ag-grid-angular>
+          </div>
+          <div class="panel-note"><span class="blue-dot"></span> Changes are staged locally. Dropped rows can be restored before applying.</div>
+          <div class="dropped-list" *ngIf="table.columns.some(c => c.status === 'dropped')">
+            <div class="dropped-title">STAGED FOR DELETION</div>
+            <div class="dropped-item" *ngFor="let c of table.columns" [hidden]="c.status !== 'dropped'"><span>{{ c.name }} <small>{{ c.dataType }}</small></span><button class="btn btn-small" (click)="restoreColumn(c)">↶ Restore</button></div>
+          </div>
+        </section>
+        <section class="panel sql-panel">
+          <div class="panel-title compact"><div class="title-icon dark">‹›</div><div><h2>DDL Preview</h2><p>Preview statements; execution will be handled by the future backend API.</p></div><span class="panel-spacer"></span><button class="btn btn-small" (click)="copySql(sqlPreview)">▢ Copy CREATE SQL</button></div>
+          <pre class="sql">{{ sqlPreview }}</pre>
+          <div class="sql-subhead"><b>Pending ALTER TABLE changes</b><button class="btn btn-small" (click)="copySql(alterPreview)">▢ Copy ALTER SQL</button></div>
+          <pre class="sql sql-small">{{ alterPreview }}</pre>
+        </section>
+      </ng-container>
+
+      <ng-container *ngIf="page === 'data'">
+        <div class="page-head">
+          <div><div class="eyebrow">DATA MANAGEMENT / DML</div><h1>Table Data <strong>{{ table.name }}</strong></h1><p>Search, sort, edit, insert and delete rows using AG Grid.</p></div>
+          <div class="head-actions"><button class="btn btn-primary" (click)="openRow('insert')">＋ Insert row</button></div>
+        </div>
+        <section class="panel">
+          <div class="panel-title"><div class="title-icon">▦</div><div><h2>Record Explorer</h2><p>{{ table.schema }}.{{ table.name }} · Inline cell editing enabled</p></div><span class="count">{{ rows.length }} ROWS</span></div>
+          <div class="toolbar"><input class="search" [(ngModel)]="searchText" placeholder="⌕  Search all columns..."><div class="tool-group"><button class="btn" (click)="openRow('edit')">✎ Edit selected</button><button class="btn btn-danger-ghost" (click)="deleteRow()">⌫ Delete selected</button></div></div>
+          <div class="grid-shell data-grid"><ag-grid-angular [theme]="gridTheme" [rowData]="rows" [columnDefs]="dataColDefs" [defaultColDef]="dataDefaultColDef" [rowSelection]="rowSelection" [pagination]="true" [paginationPageSize]="10" [animateRows]="true" (selectionChanged)="onDataSelection($event)" (cellValueChanged)="onCellChanged()"></ag-grid-angular></div>
+          <div class="panel-note"><span class="blue-dot"></span> Sample data only. Inline edits are held in browser memory and reset on reload.</div>
+        </section>
+      </ng-container>
+
+      <ng-container *ngIf="page === 'create'">
+        <div class="page-head"><div><div class="eyebrow">SCHEMA DESIGNER / DDL</div><h1>Create New Table</h1><p>Define the table owner, columns, Oracle primitive types and primary-key constraint.</p></div><button class="btn" (click)="page = 'schema'">Cancel</button></div>
+        <div class="steps">
+          <div [class.current]="createStep === 1" [class.done]="createStep > 1"><i>{{ createStep > 1 ? '✓' : '1' }}</i><span>Table identity</span></div><hr>
+          <div [class.current]="createStep === 2" [class.done]="createStep > 2"><i>{{ createStep > 2 ? '✓' : '2' }}</i><span>Columns & constraints</span></div><hr>
+          <div [class.current]="createStep === 3"><i>3</i><span>Primary key & review</span></div>
+        </div>
+        <section class="panel" *ngIf="createStep === 1">
+          <div class="panel-title"><div class="title-icon">▣</div><div><h2>Step 1 — Table Identity</h2><p>Identify where the new table will be created.</p></div></div>
+          <div class="form-grid">
+            <label>Schema owner *<select [(ngModel)]="createMeta.schema"><option>APP_OWNER</option><option>CITI_CORE</option><option>HR</option></select></label>
+            <label>Table name *<input [(ngModel)]="createMeta.name" maxlength="30" placeholder="e.g. CUSTOMER_NOTES"></label>
+            <label>Tablespace<select [(ngModel)]="createMeta.tablespace"><option>USERS</option><option>DATA</option><option>INDX</option></select></label>
+            <label>Table comment<input [(ngModel)]="createMeta.comment" placeholder="Optional table description"></label>
+          </div>
+          <div class="panel-footer"><button class="btn btn-primary" (click)="nextCreateStep()">Next: Define columns →</button></div>
+        </section>
+        <section class="panel" *ngIf="createStep === 2">
+          <div class="panel-title"><div class="title-icon">▦</div><div><h2>Step 2 — Columns & Constraints</h2><p>Add all required column definitions.</p></div><span class="count">{{ createColumns.length }} COLUMNS</span></div>
+          <div class="grid-shell create-grid"><ag-grid-angular [theme]="gridTheme" [rowData]="createColumns" [columnDefs]="schemaColDefs" [defaultColDef]="schemaDefaultColDef"></ag-grid-angular></div>
+          <div class="add-form">
+            <h3>＋ Add column definition</h3>
+            <div class="column-form">
+              <label>Column name *<input [(ngModel)]="columnDraft.name" placeholder="COLUMN_NAME"></label>
+              <label>Oracle data type<select [(ngModel)]="columnDraft.dataType"><option>VARCHAR2</option><option>NUMBER</option><option>CHAR</option><option>DATE</option><option>TIMESTAMP</option><option>CLOB</option><option>BLOB</option></select></label>
+              <label>Length / precision<input [(ngModel)]="columnDraft.length" placeholder="e.g. 100"></label>
+              <label>Scale<input [(ngModel)]="columnDraft.scale" placeholder="e.g. 2"></label>
+              <label>Default value<input [(ngModel)]="columnDraft.defaultValue" placeholder="e.g. SYSDATE"></label>
+              <label class="check"><input type="checkbox" [(ngModel)]="columnDraft.nullable"> Nullable</label>
+              <label class="check"><input type="checkbox" [(ngModel)]="columnDraft.unique"> Unique</label>
+              <label class="check"><input type="checkbox" [(ngModel)]="columnDraft.indexed"> Index</label>
+              <button class="btn btn-primary" (click)="addCreateColumn()">＋ Add</button>
+            </div>
+            <div class="draft-chips" *ngFor="let c of createColumns"><span>{{ c.name }} · {{ c.dataType }}</span><button (click)="removeCreateColumn(c.id)" aria-label="Remove column">×</button></div>
+          </div>
+          <div class="panel-footer footer-split"><button class="btn" (click)="createStep = 1">← Back</button><button class="btn btn-primary" (click)="nextCreateStep()">Next: Primary key →</button></div>
+        </section>
+        <section class="panel" *ngIf="createStep === 3">
+          <div class="panel-title"><div class="title-icon">✓</div><div><h2>Step 3 — Primary Key & Review</h2><p>Select the primary key and review generated DDL.</p></div></div>
+          <div class="pk-select" *ngFor="let c of createColumns"><label><input type="radio" name="pk" [value]="c.id" [(ngModel)]="createPrimaryKeyId"><b>{{ c.name }}</b><span>{{ c.dataType }}{{ c.length ? '(' + c.length + ')' : '' }}</span></label></div>
+          <div class="sql-toolbar"><b>CREATE TABLE preview</b><button class="btn btn-small" (click)="copySql(createSql)">▢ Copy SQL</button></div><pre class="sql">{{ createSql }}</pre>
+          <div class="panel-footer footer-split"><button class="btn" (click)="createStep = 2">← Back</button><button class="btn btn-primary" (click)="createTableNow()">✓ Create table (demo)</button></div>
+        </section>
+      </ng-container>
+      <footer class="foot"><span>Oracle Schema Manager</span><span>Frontend prototype · Oracle API integration pending</span></footer>
+    </main>
+  </div>
+</div>
+
+<div class="toast" *ngIf="toast" [class.error]="toastError"><b>{{ toastError ? '!' : '✓' }}</b>{{ toast }}</div>
+<div class="overlay" *ngIf="modal">
+  <section class="dialog" *ngIf="modal === 'column'">
+    <div class="dialog-top"><div><div class="eyebrow">SCHEMA EDITOR</div><h2>{{ modalMode === 'add' ? 'Add column' : 'Edit column' }}</h2></div><button class="close" (click)="modal = ''">×</button></div>
+    <div class="form-grid single">
+      <label>Column name *<input [(ngModel)]="columnDraft.name" placeholder="COLUMN_NAME"></label>
+      <label>Data type *<select [(ngModel)]="columnDraft.dataType"><option>VARCHAR2</option><option>NUMBER</option><option>CHAR</option><option>DATE</option><option>TIMESTAMP</option><option>CLOB</option><option>BLOB</option></select></label>
+      <label>Length / precision<input [(ngModel)]="columnDraft.length" placeholder="e.g. 100"></label>
+      <label>Scale<input [(ngModel)]="columnDraft.scale" placeholder="e.g. 2"></label>
+      <label>Default value<input [(ngModel)]="columnDraft.defaultValue" placeholder="e.g. SYSDATE"></label>
+      <div class="check-row"><label><input type="checkbox" [(ngModel)]="columnDraft.nullable"> Nullable</label><label><input type="checkbox" [(ngModel)]="columnDraft.unique"> Unique</label><label><input type="checkbox" [(ngModel)]="columnDraft.indexed"> Index</label></div>
+    </div>
+    <div class="panel-footer footer-split"><button class="btn" (click)="modal = ''">Cancel</button><button class="btn btn-primary" (click)="saveColumn()">Save draft</button></div>
+  </section>
+  <section class="dialog" *ngIf="modal === 'row'">
+    <div class="dialog-top"><div><div class="eyebrow">DATA EDITOR</div><h2>{{ modalMode === 'insert' ? 'Insert row' : 'Edit row' }}</h2></div><button class="close" (click)="modal = ''">×</button></div>
+    <div class="form-grid single row-form"><label *ngFor="let c of liveColumns">{{ c.name }} <em *ngIf="!c.nullable">Required</em><input [(ngModel)]="rowDraft[c.name]" [placeholder]="c.dataType"></label></div>
+    <div class="panel-footer footer-split"><button class="btn" (click)="modal = ''">Cancel</button><button class="btn btn-primary" (click)="saveRow()">Save row</button></div>
+  </section>
+</div>
