@@ -1,48 +1,62 @@
-# Oracle Schema Manager — Angular 21 + AG Grid
+# Oracle Schema Manager — Angular 21 + AG Grid Community
 
-Enterprise-style frontend prototype for Oracle DDL and DML workflows. Current implementation uses local sample data; it does not execute SQL or connect to Oracle.
+Enterprise-style frontend prototype for Oracle DDL and DML workflows. The app uses local sample data only; it does not connect to Oracle or execute SQL.
 
-## Features
+## Current features
 
-- DDL create-table wizard: table identity, column definitions, primary-key selection, and generated SQL preview.
-- Existing table schema editor: add columns, edit column definitions, stage/restore drops, preview ALTER TABLE SQL, apply/discard local demo changes.
-- DML data editor using AG Grid Community: sort, filter, resize, paginate, insert, edit, and delete sample records.
-- Sample tables: CUSTOMERS, EMPLOYEES, ORDERS.
-- Future-backend integration guide and Copilot Agent project instructions.
+- One main workspace with no left sidebar. Select an existing table from the main toolbar.
+- Four sample rows each for CUSTOMERS, EMPLOYEES, and ORDERS.
+- Schema grid and row-data grid visible together for the selected table.
+- DDL create-table wizard: table identity, schema owner, tablespace, column definitions, Oracle data types, length/precision/scale, defaults, nullability, unique/index options, primary key, and generated SQL preview.
+- Existing table DDL: add/edit/stage deletion/restore/discard/apply column changes, with a status column and DDL preview.
+- DML using AG Grid Community: sorting, filtering, resize, pagination, inline cell edits, insert row, edit selected row, and delete selected row.
+- New or renamed schema columns refresh the DML grid immediately. Added fields are included in existing sample rows.
+- Failure simulation: enable **Simulate next API failure**, then run the next write operation. The UI optimistically updates, then reverts to the previous table/row state when the simulated request fails.
+- REST adapter scaffold in src/app/services/database-api.service.ts, typed models, mock data provider, Copilot instructions, and backend integration guide.
 
 ## Requirements
 
-Install Node.js 24 LTS and npm (recommended). Angular 21 supports Node.js `^20.19.0`, `^22.12.0`, or `^24.0.0`. Node 24 also avoids the npm 10 dependency resolver crash seen in CI.
+- Node.js 24 LTS recommended (the repository includes .nvmrc).
+- npm.
+- VS Code recommended.
 
 ## Run locally
 
-```bash
-npm install
-npm start
-```
+    git clone https://github.com/ddldmlproject-glitch/tableManager.git
+    cd tableManager
+    npm install
+    npm start
 
 Open http://localhost:4200.
 
-Build:
+Build the app:
 
-```bash
-npm run build
-```
+    npm run build
 
-## Use GitHub Copilot Agent in VS Code
+## Test the updated features
 
-1. Clone this repository and open the folder in VS Code.
-2. Install/enable GitHub Copilot and sign in.
-3. Open the Copilot Chat panel and switch to **Agent** mode.
-4. Start with: `Read .github/copilot-instructions.md and docs/BACKEND-INTEGRATION.md. Inspect the application and identify any build errors first. Do not connect to a real database or invent backend endpoints.`
-5. For larger changes, ask Agent to propose a plan before applying it, review each diff, and run `npm run build` after changes.
+1. Select CUSTOMERS in the main screen's table dropdown. Confirm 5 schema columns and 4 sample rows are visible together.
+2. Select EMPLOYEES, then ORDERS. Each should load its schema and 4 sample rows.
+3. Click a data cell and edit it. The local grid updates immediately.
+4. Select a row, choose Edit selected, change values, and save. Then select another row and choose Delete selected.
+5. Add a schema column, for example SEGMENT as VARCHAR2(40). After Save column, check that the column appears in both schema and data grids immediately and existing rows show the new field.
+6. Edit a non-primary-key column name. Confirm the data grid header changes and existing row values remain under the renamed field.
+7. Stage a column deletion. The field should disappear from the row grid and appear under the staged-deletion section. Use Restore to undo it, or Apply schema to apply it to demo memory.
+8. Click Create table. Walk through all three steps, define at least two columns, select a primary key, and create the table. It should appear in the table dropdown and workspace.
+9. To test rollback, turn on **Simulate next API failure**, then save a row edit or add/edit a column. Wait for the error toast: the UI should restore the previous state. The toggle resets after the next write.
+10. Run npm run build after any code changes.
 
-For step-by-step Agent setup and ready-to-paste prompts, see [Copilot Agent Guide](docs/COPILOT-AGENT-GUIDE.md).
+## Copilot Agent in VS Code
 
-## Backend integration plan
+Read docs/COPILOT-AGENT-GUIDE.md. Repository-specific instructions are in .github/copilot-instructions.md.
 
-See `docs/BACKEND-INTEGRATION.md`. Keep components independent of HTTP details by calling typed service interfaces. Replace mock data provider implementations with `HttpClient` implementations once backend endpoints and response contracts are available. The backend must handle authorization, validate all schema changes, generate database-specific DDL from structured metadata, and use bind parameters for DML values. Never execute arbitrary SQL text provided by the browser.
+## Backend integration
 
-## Demo limitations
+See docs/BACKEND-INTEGRATION.md. The proposed endpoints are placeholders to agree with the backend team. When APIs are available, switch from MockDatabaseService to an API-backed repository/provider and call DatabaseApiService. Only show success when the API confirms success; restore the captured prior state when a write fails.
 
-Sample data is held in browser memory and resets on page reload. Applying changes affects only demo state. No Oracle database is connected.
+## Demo/security limitations
+
+- All data lives in browser memory and resets on reload.
+- The API failure toggle simulates rollback behavior; it is not a real HTTP request.
+- Generated DDL is preview only.
+- Never connect the browser directly to Oracle or execute arbitrary SQL strings from the frontend. The backend must authorize operations, validate identifiers/constraints, generate DDL from structured schema metadata, bind DML values, and audit destructive operations.
