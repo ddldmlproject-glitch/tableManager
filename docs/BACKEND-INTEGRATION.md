@@ -1,6 +1,14 @@
 # Backend Integration Guide
 
-The app currently uses browser-memory sample data. It does not connect to Oracle and it does not execute SQL. Keep database access behind a backend API.
+The frontend currently uses in-memory sample data. It does not connect to Oracle and does not execute SQL. Every live database operation must go through a secured backend API.
+
+## Current behavior to preserve
+
+- Table selection loads schema and row data together.
+- Add/edit/rename column changes refresh the schema and DML grid immediately in local demo state.
+- DML inline edits, insert, update, and delete update the UI optimistically.
+- The **Simulate next API failure** toggle is a test seam that intentionally rejects the next local write after the UI updates, then rolls back to the prior state. Replace this simulation with actual HTTP Observables once endpoints are available.
+- On an actual API failure, restore the previously captured table/cell/row state, show a user-readable error, and refresh the AG Grid row data/column definitions. Do not swallow the failure or leave unsaved UI changes appearing to be persisted.
 
 ## Proposed REST contract
 
@@ -15,25 +23,27 @@ The app currently uses browser-memory sample data. It does not connect to Oracle
 | Update row | PATCH | /api/data/{schema}/{table}/rows/{key}/{value} |
 | Delete row | DELETE | /api/data/{schema}/{table}/rows/{key}/{value} |
 
-These routes are suggestions only. Agree final endpoint names, DTOs, primary-key semantics, paging, filtering, and error schema with the backend team.
+These routes are suggestions only. Agree the exact DTOs, response envelopes, key semantics, pagination/filtering strategy, and error format with the backend team.
 
-## Frontend integration steps
+## Angular integration steps
 
-1. Implement and document backend API contracts first.
-2. Set apiBaseUrl in src/environments/environment.ts for each environment.
-3. Keep calls within DatabaseApiService. Add an injectable repository/provider abstraction so mock mode and HTTP mode can be swapped without rewriting UI components.
-4. Replace MockDatabaseService calls with an API-backed implementation; return Observables and handle loading, empty, success, validation, unauthorized, conflict, and server-failure states.
-5. After successful writes, reload schema or rows from the backend. Do not display persistence success until the API returns success.
-6. Use server-side pagination/filtering for large tables.
-7. Add an interceptor only for agreed concerns such as correlation IDs and established authentication. Never hardcode tokens.
+1. Agree API contracts and typed DTOs with backend developers.
+2. Set apiBaseUrl in src/environments/environment.ts per environment.
+3. Keep calls in DatabaseApiService. Add a repository/provider abstraction such as DatabaseDataSource with a mock and HTTP implementation so screens need no rewriting.
+4. Replace UI calls to MockDatabaseService with the mock/API provider interface.
+5. For each mutation, capture the prior value/table snapshot; update the UI optimistically; issue the HTTP request; keep the new state only on success; on error restore the prior snapshot, reset AG Grid data/columns, and display an error message.
+6. On success, prefer authoritative response data or reload metadata/rows from the server. Do not show a persistence-success message before the API confirms success.
+7. Add an HTTP interceptor only for approved cross-cutting concerns such as correlation IDs/auth. Never hardcode access tokens.
+8. Handle loading, empty, validation (400/422), unauthorized (401/403), conflict (409), timeout/network, and server errors consistently.
+9. Use server-side pagination, sorting, and filtering for large tables. Do not fetch unbounded production tables to the browser.
 
 ## Backend security checklist
 
-- Authenticate every request and authorize schema/table permissions server-side.
-- Restrict schemas, tables and columns to allowed identifiers.
-- Validate identifiers and quote them server-side; identifiers are not ordinary bind parameters.
-- Use bind parameters for DML values; never concatenate browser-provided values into SQL.
-- Build DDL from validated structured schema definitions, not raw SQL entered by the client.
-- Validate data types, lengths, precision, scale, nullability, defaults, unique/index and primary/foreign-key rules.
-- Require elevated permission and audit logs for dropping tables/columns. Consider data-loss and constraint dependencies.
-- Return structured errors with request IDs, and never expose credentials or database stack traces.
+- Authenticate users and authorize schema/table/column operations server-side.
+- Restrict schema/table/column references to an allow-list for the active user.
+- Validate and safely quote identifiers on the server; identifiers are not ordinary bind parameters.
+- Use bind parameters for DML values, never concatenate row values into SQL.
+- Construct DDL only from validated structured definitions, never execute arbitrary client-provided SQL.
+- Validate data types, lengths, precision/scale, nullability, defaults, uniqueness, indexes, primary/foreign keys and dependent constraints.
+- Require authorization and audit logs for destructive schema changes.
+- Return structured errors and correlation IDs without exposing DB credentials or internal stack traces.
