@@ -79,6 +79,7 @@ export class AppComponent implements OnInit {
   createPrimaryKeyId: number | null = null;
   searchText = '';
   isSaving = false;
+  private visibleRowsCache: TableRow[] = [];
 
   /**
    * Check this before the next write to simulate a failed API request.
@@ -97,8 +98,10 @@ export class AppComponent implements OnInit {
     return this.mockDb.tableByName(this.selectedTableName) ?? this.tables[0];
   }
 
+  private activeColumnsCache: ColumnDefinition[] = [];
+
   get liveColumns(): ColumnDefinition[] {
-    return this.table.columns.filter(column => column.status !== 'dropped');
+    return this.activeColumnsCache;
   }
 
   get primaryKeyName(): string {
@@ -114,10 +117,7 @@ export class AppComponent implements OnInit {
   }
 
   get rows(): TableRow[] {
-    const term = this.searchText.trim().toLowerCase();
-    return this.table.rows.filter(row =>
-      !term || Object.values(row).some(value => String(value ?? '').toLowerCase().includes(term))
-    );
+    return this.visibleRowsCache;
   }
 
   schemaColDefs: ColDef<ColumnDefinition>[] = [
@@ -137,6 +137,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.refreshDataColumns();
+    this.refreshVisibleRows();
     this.takeSchemaSnapshot();
   }
 
@@ -147,11 +148,25 @@ export class AppComponent implements OnInit {
     this.selectedRow = null;
     this.searchText = '';
     this.refreshDataColumns();
+    this.refreshVisibleRows();
     this.takeSchemaSnapshot();
     this.notify('Loaded ' + name + ' schema and sample records.');
   }
 
+  refreshVisibleRows(): void {
+    const term = this.searchText.trim().toLowerCase();
+    this.visibleRowsCache = !term ? this.table.rows : this.table.rows.filter(row =>
+      Object.values(row).some(value => String(value ?? '').toLowerCase().includes(term))
+    );
+  }
+
+  updateSearch(value: string): void {
+    this.searchText = value;
+    this.refreshVisibleRows();
+  }
+
   refreshDataColumns(): void {
+    this.activeColumnsCache = this.table.columns.filter(column => column.status !== 'dropped');
     this.dataColDefs = this.liveColumns.map(column => ({
       field: column.name,
       headerName: column.name,
@@ -248,6 +263,7 @@ export class AppComponent implements OnInit {
     this.selectedColumn = null;
     this.selectedRow = null;
     this.refreshDataColumns();
+    this.refreshVisibleRows();
   }
 
   private persistOptimistically(
@@ -604,6 +620,7 @@ export class AppComponent implements OnInit {
     this.selectedTableName = name;
     this.page = 'workspace';
     this.refreshDataColumns();
+    this.refreshVisibleRows();
     this.persistOptimistically(
       () => {
         const index = this.mockDb.tables.findIndex(table => table.name === name && table.schema === newTable.schema);
@@ -611,6 +628,7 @@ export class AppComponent implements OnInit {
         this.selectedTableName = previousTableName;
         this.page = 'create';
         this.refreshDataColumns();
+        this.refreshVisibleRows();
       },
       'Table created in local sample data. The data grid is ready for row inserts.',
       'Create failed. The table was removed and the previous selection restored.',
@@ -705,6 +723,7 @@ export class AppComponent implements OnInit {
     const before = this.cloneTable(this.table);
     const selected = this.selectedRow;
     this.table.rows = this.table.rows.filter(row => row !== selected);
+    this.refreshVisibleRows();
     this.selectedRow = null;
     this.persistOptimistically(
       () => this.restoreTableSnapshot(before),
