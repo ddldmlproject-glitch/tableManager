@@ -129,7 +129,8 @@ export class AppComponent implements OnInit {
     { field: 'defaultValue', headerName: 'DEFAULT VALUE', minWidth: 140 },
     { field: 'unique', headerName: 'UNIQUE', valueFormatter: params => params.value ? 'YES' : '—', maxWidth: 100 },
     { field: 'indexed', headerName: 'INDEXED', valueFormatter: params => params.value ? 'YES' : '—', maxWidth: 100 },
-    { field: 'primaryKey', headerName: 'PRIMARY KEY', valueFormatter: params => params.value ? 'PK' : '—', maxWidth: 110 }
+    { field: 'primaryKey', headerName: 'PRIMARY KEY', valueFormatter: params => params.value ? 'PK' : '—', maxWidth: 110 },
+    { field: 'status', headerName: 'CHANGE STATUS', valueFormatter: params => params.value ? String(params.value).toUpperCase() : '—', minWidth: 125 }
   ];
 
   dataColDefs: ColDef<TableRow>[] = [];
@@ -301,10 +302,6 @@ export class AppComponent implements OnInit {
   openEditColumn(): void {
     if (!this.selectedColumn) {
       this.notify('Select a column in the schema grid first.', true);
-      return;
-    }
-    if (this.selectedColumn.primaryKey) {
-      this.notify('Primary-key columns are protected in this prototype. Update constraints through a reviewed backend change.', true);
       return;
     }
     this.modal = 'column';
