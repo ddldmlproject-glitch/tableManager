@@ -12,7 +12,7 @@ Enterprise-style frontend prototype for Oracle DDL and DML workflows. Current im
 
 ## Requirements
 
-Install Node.js 22.12+ (Node 22 LTS recommended) and npm. Angular 21 supports Node.js `^20.19.0`, `^22.12.0`, or `^24.0.0`.
+Install Node.js 24 LTS and npm (recommended). Angular 21 supports Node.js `^20.19.0`, `^22.12.0`, or `^24.0.0`. Node 24 also avoids the npm 10 dependency resolver crash seen in CI.
 
 ## Run locally
 
