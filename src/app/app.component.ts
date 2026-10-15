@@ -155,9 +155,13 @@ export class AppComponent implements OnInit {
 
   refreshVisibleRows(): void {
     const term = this.searchText.trim().toLowerCase();
-    this.visibleRowsCache = !term ? this.table.rows : this.table.rows.filter(row =>
-      Object.values(row).some(value => String(value ?? '').toLowerCase().includes(term))
-    );
+    // Always publish a fresh rowData array when the selected table/search changes.
+    // Keep row objects themselves shared with the mock DB so edits persist locally.
+    this.visibleRowsCache = !term
+      ? [...this.table.rows]
+      : this.table.rows.filter(row =>
+          Object.values(row).some(value => String(value ?? '').toLowerCase().includes(term))
+        );
   }
 
   updateSearch(value: string): void {
