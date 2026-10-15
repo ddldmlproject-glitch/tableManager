@@ -14,7 +14,7 @@
         <div><span>Schema owner</span><b>{{ table.schema }}</b></div>
         <div><span>Table name</span><b>{{ table.name }}</b></div>
         <div><span>Columns</span><b>{{ liveColumns.length }}</b></div>
-        <div><span>Primary key</span><b>{{ liveColumns.find(c => c.primaryKey)?.name || '—' }}</b></div>
+        <div><span>Primary key</span><b>{{ primaryKeyName }}</b></div>
         <div><span>Pending changes</span><b [class.warn]="stagedCount">{{ stagedCount }}</b></div>
       </div>
       <div class="side-caption section-gap">WORKSPACE</div>
@@ -31,7 +31,7 @@
         </div>
         <section class="metric-row">
           <div class="metric"><span>TABLE COLUMNS</span><strong>{{ liveColumns.length }}</strong><small>Active schema fields</small></div>
-          <div class="metric"><span>PRIMARY KEY</span><strong class="metric-text">{{ liveColumns.find(c => c.primaryKey)?.name || 'Not set' }}</strong><small>Unique row identifier</small></div>
+          <div class="metric"><span>PRIMARY KEY</span><strong class="metric-text">{{ primaryKeyName === '—' ? 'Not set' : primaryKeyName }}</strong><small>Unique row identifier</small></div>
           <div class="metric"><span>SCHEMA CHANGES</span><strong>{{ stagedCount }}</strong><small>{{ stagedCount ? 'Awaiting apply or discard' : 'No pending changes' }}</small></div>
           <div class="metric"><span>DATABASE</span><strong class="metric-text">Oracle</strong><small>Mock mode · API pending</small></div>
         </section>
@@ -42,7 +42,7 @@
             <ag-grid-angular [theme]="gridTheme" [rowData]="table.columns" [columnDefs]="schemaColDefs" [defaultColDef]="schemaDefaultColDef" [rowSelection]="rowSelection" (selectionChanged)="onSchemaSelection($event)" [animateRows]="true"></ag-grid-angular>
           </div>
           <div class="panel-note"><span class="blue-dot"></span> Changes are staged locally. Dropped rows can be restored before applying.</div>
-          <div class="dropped-list" *ngIf="table.columns.some(c => c.status === 'dropped')">
+          <div class="dropped-list" *ngIf="hasDroppedColumns">
             <div class="dropped-title">STAGED FOR DELETION</div>
             <div class="dropped-item" *ngFor="let c of table.columns" [hidden]="c.status !== 'dropped'"><span>{{ c.name }} <small>{{ c.dataType }}</small></span><button class="btn btn-small" (click)="restoreColumn(c)">↶ Restore</button></div>
           </div>
