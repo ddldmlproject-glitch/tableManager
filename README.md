@@ -37,7 +37,9 @@ npm run build
 4. Start with: `Read .github/copilot-instructions.md and docs/BACKEND-INTEGRATION.md. Inspect the application and identify any build errors first. Do not connect to a real database or invent backend endpoints.`
 5. For larger changes, ask Agent to propose a plan before applying it, review each diff, and run `npm run build` after changes.
 
-For step-by-step Agent setup and ready-to-paste prompts, see [Copilot Agent Guide](docs/COPILOT-AGENT-GUIDE.md).\n\n## Backend integration plan
+For step-by-step Agent setup and ready-to-paste prompts, see [Copilot Agent Guide](docs/COPILOT-AGENT-GUIDE.md).
+
+## Backend integration plan
 
 See `docs/BACKEND-INTEGRATION.md`. Keep components independent of HTTP details by calling typed service interfaces. Replace mock data provider implementations with `HttpClient` implementations once backend endpoints and response contracts are available. The backend must handle authorization, validate all schema changes, generate database-specific DDL from structured metadata, and use bind parameters for DML values. Never execute arbitrary SQL text provided by the browser.
 
