@@ -1,30 +1,32 @@
 # Copilot Agent Instructions — Oracle Schema Manager
 
 ## Product goal
-Maintain a rich enterprise Oracle DDL/DML manager in Angular 21 and AG Grid Community, based on the supplied Oracle Schema Manager screenshots. Design language: navy sidebar, light workspace, compact labels/forms, blue primary actions, consistent status badges, accessible controls, clear confirmation flows.
+Maintain an enterprise Oracle DDL/DML manager with Angular 21 and AG Grid Community. The current application has **one main screen and no left sidebar**. The default table workspace displays the schema grid and existing row-data grid together. Use a navy application header, white workspace panels, compact field controls, blue primary actions, muted borders, and responsive layouts.
 
 ## Architecture
-- Angular standalone components and strict TypeScript.
-- AG Grid Community for DML records and schema column tables.
-- Shared typed models live in src/app/models/database.models.ts.
-- MockDatabaseService is the current sample data source. Keep the application usable without a backend.
-- DatabaseApiService is a future HttpClient adapter; route paths are proposals until backend contracts are agreed.
-- Avoid mixing HTTP requests into components; use services and typed DTOs.
-- Keep changes focused and avoid unrelated dependencies. Do not add AG Grid Enterprise.
+- Use Angular standalone components and strict TypeScript.
+- Use AG Grid Community for both the schema column grid and DML table data grid.
+- Typed interfaces live in src/app/models/database.models.ts.
+- MockDatabaseService is the sample-data provider; keep the app usable without a backend.
+- DatabaseApiService is a future HttpClient adapter; endpoints are proposed, not live.
+- Keep API calls out of presentation logic. Add a provider/repository abstraction before switching from mock to live data.
+- Do not add AG Grid Enterprise.
 
-## Required flows
-1. Create Table DDL wizard with table owner/schema, table name, tablespace, comment, dynamic Oracle column definitions, primitive types (VARCHAR2, NUMBER, CHAR, DATE, TIMESTAMP, CLOB, BLOB), length/precision/scale, default, nullability, unique/index options, primary-key selection, SQL preview, and confirmation.
-2. Existing-table editor using a table dropdown and a column grid. Add, edit, stage deletion, restore staged deletions, discard changes, display staged status, and preview CREATE/ALTER statements.
-3. DML grid with dynamic columns from schema metadata, sorting, filtering, pagination, resizing, inline edits, insert/edit/delete row flows, required field checks, and delete confirmation.
-4. Clear empty/loading/error/success feedback and responsive layout.
-5. Sample data only until REST endpoints are supplied.
+## Required behavior
+1. Existing table selection in the main screen immediately displays schema and rows; all bundled existing tables should have 3–4 sample records.
+2. DDL Create Table: schema owner, table name, tablespace, comment, dynamic Oracle column definitions, primitive data types, length/precision/scale, defaults, nullability, unique/index options, primary-key selection, and generated SQL preview.
+3. Existing-table schema editor: add/edit/stage delete/restore/discard/apply changes. A new or renamed column must refresh the data-grid column definitions immediately; add the new field to existing demo rows.
+4. DML: dynamic AG Grid columns, sorting, filtering, pagination, inline cell updates, insert row, edit selected row, delete selected row, required-field checks, primary-key uniqueness, unique-column checks, and destructive-operation confirmation.
+5. Writes use optimistic UI. When a write fails, restore the snapshot or previous cell/row values and show a clear error. The Simulate next API failure checkbox currently exercises this rollback without a live endpoint.
+6. The create-table result should appear in the table dropdown and both workspace grids; a new table begins with zero records, ready for insertion.
+7. Keep clear success/failure messages, saving indicators, and empty states.
 
 ## Data correctness and security
-- Never imply mock state has changed a real Oracle database.
-- Never execute arbitrary SQL from the browser.
-- Backend must authorize schema/table/column operations, validate identifiers and type rules, generate DDL from validated structured metadata, bind DML values, audit destructive operations, and return structured errors.
-- Protect primary keys and constraint dependencies during destructive schema changes.
-- Do not put credentials or access tokens in frontend source or environment files.
+- Never claim mock updates modify Oracle.
+- Never execute SQL in the browser.
+- Future backend must authorize each operation, validate identifiers/schema/type/constraints and row values, generate DDL only from validated structured metadata, use bind parameters for DML, audit destructive changes, and return structured errors.
+- Protect primary key and dependent constraints when dropping or altering columns.
+- No credentials, database passwords, or access tokens in frontend source or environment config.
 
 ## Agent workflow
-Before large changes, summarize a plan and inspect current files. Make incremental edits, inspect diffs, run npm run build, and fix build issues introduced by the change. Preserve existing working functionality and document proposed API contract changes.
+Inspect project files before changes. For larger work, state a brief plan, make incremental changes, inspect diffs, run npm run build, and resolve errors introduced by the edit. Do not replace working architecture unnecessarily. Update README and integration docs when workflow behavior changes.
