@@ -1,17 +1,35 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
-import { AllCommunityModule, ColDef, ModuleRegistry, RowSelectionOptions, SelectionChangedEvent, themeQuartz } from 'ag-grid-community';
+import {
+  AllCommunityModule,
+  CellValueChangedEvent,
+  ColDef,
+  ModuleRegistry,
+  RowSelectionOptions,
+  SelectionChangedEvent,
+  themeQuartz
+} from 'ag-grid-community';
 import { ColumnDefinition, OracleDataType, TableRow, TableSchema } from './models/database.models';
 import { MockDatabaseService } from './services/mock-database.service';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-type PageMode = 'schema' | 'data' | 'create';
+type PageMode = 'workspace' | 'create';
+type ModalMode = 'add' | 'edit' | 'insert';
+
 const blankColumn = (id: number): ColumnDefinition => ({
-  id, name: '', dataType: 'VARCHAR2', length: '255', scale: '', nullable: true,
-  defaultValue: '', unique: false, indexed: false, primaryKey: false
+  id,
+  name: '',
+  dataType: 'VARCHAR2',
+  length: '255',
+  scale: '',
+  nullable: true,
+  defaultValue: '',
+  unique: false,
+  indexed: false,
+  primaryKey: false
 });
 
 @Component({
@@ -20,21 +38,39 @@ const blankColumn = (id: number): ColumnDefinition => ({
   imports: [CommonModule, FormsModule, AgGridAngular],
   templateUrl: './app.component.html'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   constructor(private readonly mockDb: MockDatabaseService) {}
 
   readonly gridTheme = themeQuartz;
-  readonly rowSelection: RowSelectionOptions = { mode: 'singleRow', checkboxes: false, enableClickSelection: true };
-  readonly dataDefaultColDef: ColDef = { sortable: true, filter: true, resizable: true, editable: true, minWidth: 130, flex: 1 };
-  readonly schemaDefaultColDef: ColDef = { sortable: true, filter: true, resizable: true, minWidth: 105, flex: 1 };
-  page: PageMode = 'schema';
+  readonly rowSelection: RowSelectionOptions = {
+    mode: 'singleRow',
+    checkboxes: false,
+    enableClickSelection: true
+  };
+  readonly dataDefaultColDef: ColDef = {
+    sortable: true,
+    filter: true,
+    resizable: true,
+    editable: true,
+    minWidth: 130,
+    flex: 1
+  };
+  readonly schemaDefaultColDef: ColDef = {
+    sortable: true,
+    filter: true,
+    resizable: true,
+    minWidth: 105,
+    flex: 1
+  };
+
+  page: PageMode = 'workspace';
   selectedTableName = 'CUSTOMERS';
   selectedColumn: ColumnDefinition | null = null;
   selectedRow: TableRow | null = null;
   toast = '';
   toastError = false;
-  modal: 'column' | 'row' | '' = '';
-  modalMode: 'add' | 'edit' | 'insert' = 'add';
+  modal: '' | 'column' | 'row' = '';
+  modalMode: ModalMode = 'add';
   columnDraft: ColumnDefinition = blankColumn(100);
   rowDraft: TableRow = {};
   createStep = 1;
@@ -42,19 +78,46 @@ export class AppComponent {
   createColumns: ColumnDefinition[] = [];
   createPrimaryKeyId: number | null = null;
   searchText = '';
-  private nextId = 100;
-  private snapshot: ColumnDefinition[] = [];
-  private snapshotRows: TableRow[] = [];
+  isSaving = false;
 
-  get tables(): TableSchema[] { return this.mockDb.tables; }
-  get table(): TableSchema { return this.mockDb.tableByName(this.selectedTableName) ?? this.tables[0]; }
-  get liveColumns(): ColumnDefinition[] { return this.table.columns.filter(c => c.status !== 'dropped'); }
-  get primaryKeyName(): string { return this.liveColumns.find(c => c.primaryKey)?.name ?? '—'; }
-  get hasDroppedColumns(): boolean { return this.table.columns.some(c => c.status === 'dropped'); }
-  get stagedCount(): number { return this.table.columns.filter(c => !!c.status).length; }
+  /**
+   * Check this before the next write to simulate a failed API request.
+   * It demonstrates optimistic UI rollback while the app has no real API yet.
+   */
+  failNextSave = false;
+
+  private nextId = 100;
+  private schemaBaseline: ColumnDefinition[] = [];
+
+  get tables(): TableSchema[] {
+    return this.mockDb.tables;
+  }
+
+  get table(): TableSchema {
+    return this.mockDb.tableByName(this.selectedTableName) ?? this.tables[0];
+  }
+
+  get liveColumns(): ColumnDefinition[] {
+    return this.table.columns.filter(column => column.status !== 'dropped');
+  }
+
+  get primaryKeyName(): string {
+    return this.liveColumns.find(column => column.primaryKey)?.name ?? '—';
+  }
+
+  get hasDroppedColumns(): boolean {
+    return this.table.columns.some(column => column.status === 'dropped');
+  }
+
+  get stagedCount(): number {
+    return this.table.columns.filter(column => Boolean(column.status)).length;
+  }
+
   get rows(): TableRow[] {
     const term = this.searchText.trim().toLowerCase();
-    return this.table.rows.filter(row => !term || Object.values(row).some(v => String(v ?? '').toLowerCase().includes(term)));
+    return this.table.rows.filter(row =>
+      !term || Object.values(row).some(value => String(value ?? '').toLowerCase().includes(term))
+    );
   }
 
   schemaColDefs: ColDef<ColumnDefinition>[] = [
@@ -62,187 +125,600 @@ export class AppComponent {
     { field: 'dataType', headerName: 'DATA TYPE', minWidth: 115 },
     { field: 'length', headerName: 'LENGTH / PRECISION', minWidth: 135 },
     { field: 'scale', headerName: 'SCALE', maxWidth: 95 },
-    { field: 'nullable', headerName: 'NULLABLE', valueFormatter: p => p.value ? 'YES' : 'NO', maxWidth: 105 },
+    { field: 'nullable', headerName: 'NULLABLE', valueFormatter: params => params.value ? 'YES' : 'NO', maxWidth: 105 },
     { field: 'defaultValue', headerName: 'DEFAULT VALUE', minWidth: 140 },
-    { field: 'unique', headerName: 'UNIQUE', valueFormatter: p => p.value ? 'YES' : '—', maxWidth: 100 },
-    { field: 'indexed', headerName: 'INDEXED', valueFormatter: p => p.value ? 'YES' : '—', maxWidth: 100 },
-    { field: 'primaryKey', headerName: 'PRIMARY KEY', valueFormatter: p => p.value ? 'PK' : '—', maxWidth: 110 }
+    { field: 'unique', headerName: 'UNIQUE', valueFormatter: params => params.value ? 'YES' : '—', maxWidth: 100 },
+    { field: 'indexed', headerName: 'INDEXED', valueFormatter: params => params.value ? 'YES' : '—', maxWidth: 100 },
+    { field: 'primaryKey', headerName: 'PRIMARY KEY', valueFormatter: params => params.value ? 'PK' : '—', maxWidth: 110 }
   ];
+
   dataColDefs: ColDef<TableRow>[] = [];
 
   ngOnInit(): void {
     this.refreshDataColumns();
-    this.takeSnapshot();
+    this.takeSchemaSnapshot();
   }
+
   selectTable(name: string): void {
     this.selectedTableName = name;
-    this.page = 'schema';
+    this.page = 'workspace';
     this.selectedColumn = null;
     this.selectedRow = null;
+    this.searchText = '';
     this.refreshDataColumns();
-    this.takeSnapshot();
-    this.notify('Loaded ' + name + ' schema from sample data.');
+    this.takeSchemaSnapshot();
+    this.notify('Loaded ' + name + ' schema and sample records.');
   }
+
   refreshDataColumns(): void {
-    this.dataColDefs = this.liveColumns.map(c => ({
-      field: c.name, headerName: c.name, editable: true, minWidth: 135, flex: 1,
-      valueFormatter: p => p.value === undefined || p.value === null || p.value === '' ? '—' : String(p.value)
+    this.dataColDefs = this.liveColumns.map(column => ({
+      field: column.name,
+      headerName: column.name,
+      editable: true,
+      minWidth: 135,
+      flex: 1,
+      valueFormatter: params =>
+        params.value === undefined || params.value === null || params.value === '' ? '—' : String(params.value)
     }));
   }
+
   onSchemaSelection(event: SelectionChangedEvent<ColumnDefinition>): void {
     this.selectedColumn = event.api.getSelectedRows()[0] ?? null;
   }
+
   onDataSelection(event: SelectionChangedEvent<TableRow>): void {
     this.selectedRow = event.api.getSelectedRows()[0] ?? null;
   }
-  onCellChanged(): void { this.notify('Cell changed in local demo memory.'); }
-  private takeSnapshot(): void {
-    this.snapshot = this.table.columns.map(c => ({ ...c }));
-    this.snapshotRows = this.table.rows.map(r => ({ ...r }));
+
+  onDataCellChanged(event: CellValueChangedEvent<TableRow>): void {
+    const row = event.data;
+    const field = event.colDef.field;
+    if (!row || !field || event.newValue === event.oldValue) return;
+
+    if (this.isSaving) {
+      row[field] = event.oldValue;
+      event.api.refreshCells({ force: true });
+      this.notify('Another save is in progress. The cell change was reverted.', true);
+      return;
+    }
+
+    const column = this.liveColumns.find(item => item.name === field);
+    let nextValue: string | number | boolean | null = event.newValue ?? null;
+
+    if (column && !column.nullable && (nextValue === null || nextValue === '')) {
+      row[field] = event.oldValue;
+      event.api.refreshCells({ force: true });
+      this.notify(field + ' cannot be empty.', true);
+      return;
+    }
+
+    if (column?.dataType === 'NUMBER' && nextValue !== null && nextValue !== '') {
+      const numberValue = Number(nextValue);
+      if (!Number.isFinite(numberValue)) {
+        row[field] = event.oldValue;
+        event.api.refreshCells({ force: true });
+        this.notify(field + ' must be numeric.', true);
+        return;
+      }
+      nextValue = numberValue;
+      row[field] = numberValue;
+      event.api.refreshCells({ force: true });
+    }
+
+    if (column?.unique && nextValue !== null && nextValue !== '' &&
+        this.table.rows.some(other => other !== row && other[field] === nextValue)) {
+      row[field] = event.oldValue;
+      event.api.refreshCells({ force: true });
+      this.notify(field + ' must be unique.', true);
+      return;
+    }
+
+    const previousValue = event.oldValue;
+    this.persistOptimistically(
+      () => {
+        row[field] = previousValue ?? null;
+        event.api.refreshCells({ force: true });
+      },
+      'Cell update saved to local sample data.',
+      'The save failed. The cell has been restored to its previous value.'
+    );
   }
+
+  private cloneTable(source: TableSchema): TableSchema {
+    return {
+      ...source,
+      columns: source.columns.map(column => ({ ...column })),
+      rows: source.rows.map(row => ({ ...row }))
+    };
+  }
+
+  private takeSchemaSnapshot(): void {
+    this.schemaBaseline = this.table.columns.map(column => ({ ...column }));
+  }
+
+  private restoreTableSnapshot(snapshot: TableSchema): void {
+    const replacement = this.cloneTable(snapshot);
+    const index = this.mockDb.tables.findIndex(
+      item => item.name === snapshot.name && item.schema === snapshot.schema
+    );
+    if (index >= 0) this.mockDb.tables[index] = replacement;
+    else this.mockDb.tables.push(replacement);
+    this.selectedTableName = replacement.name;
+    this.selectedColumn = null;
+    this.selectedRow = null;
+    this.refreshDataColumns();
+  }
+
+  private persistOptimistically(
+    rollback: () => void,
+    successMessage: string,
+    failureMessage: string,
+    onSuccess?: () => void
+  ): void {
+    const shouldFail = this.failNextSave;
+    this.failNextSave = false;
+    this.isSaving = true;
+
+    // Mock latency mirrors an async REST request. The UI is already updated.
+    window.setTimeout(() => {
+      this.isSaving = false;
+      if (shouldFail) {
+        rollback();
+        this.notify(failureMessage, true);
+        return;
+      }
+      onSuccess?.();
+      this.notify(successMessage);
+    }, 350);
+  }
+
   private notify(message: string, error = false): void {
     this.toast = message;
     this.toastError = error;
-    window.setTimeout(() => { if (this.toast === message) this.toast = ''; }, 3800);
+    window.setTimeout(() => {
+      if (this.toast === message) this.toast = '';
+    }, 4200);
   }
+
   private validIdentifier(value: string): boolean {
     return /^[A-Z][A-Z0-9_$#]{0,29}$/.test(value.trim().toUpperCase());
   }
+
+  private sampleDefaultValue(value: string): string | number | null {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith("'") && trimmed.endsWith("'")) return trimmed.slice(1, -1);
+    return trimmed;
+  }
+
   openAddColumn(): void {
-    this.modal = 'column'; this.modalMode = 'add'; this.columnDraft = blankColumn(this.nextId++);
+    if (this.isSaving) return;
+    this.modal = 'column';
+    this.modalMode = 'add';
+    this.columnDraft = blankColumn(this.nextId++);
   }
+
   openEditColumn(): void {
-    if (!this.selectedColumn) { this.notify('Select a column in the grid first.', true); return; }
-    this.modal = 'column'; this.modalMode = 'edit'; this.columnDraft = { ...this.selectedColumn };
-  }
-  saveColumn(): void {
-    const c = { ...this.columnDraft, name: this.columnDraft.name.trim().toUpperCase() };
-    if (!this.validIdentifier(c.name)) { this.notify('Use a valid Oracle identifier, up to 30 characters.', true); return; }
-    if (this.table.columns.some(x => x.id !== c.id && x.status !== 'dropped' && x.name === c.name)) { this.notify('Column names must be unique.', true); return; }
-    if (['VARCHAR2', 'CHAR'].includes(c.dataType) && (!/^\d+$/.test(c.length) || Number(c.length) < 1 || Number(c.length) > 4000)) { this.notify('VARCHAR2/CHAR length must be between 1 and 4000.', true); return; }
-    if (c.dataType === 'NUMBER' && c.length && !/^\d{1,2}$/.test(c.length)) { this.notify('NUMBER precision must be a valid numeric value.', true); return; }
-    if (c.scale && (!/^\d+$/.test(c.scale) || Number(c.scale) > 127)) { this.notify('Scale must be a number from 0 to 127.', true); return; }
-    if (this.modalMode === 'add') {
-      c.status = 'added';
-      this.table.columns.push(c);
-    } else {
-      const existing = this.table.columns.find(x => x.id === c.id);
-      if (existing) Object.assign(existing, c, { status: existing.status === 'added' ? 'added' : 'modified' });
+    if (!this.selectedColumn) {
+      this.notify('Select a column in the schema grid first.', true);
+      return;
     }
-    this.refreshDataColumns(); this.selectedColumn = null; this.modal = '';
-    this.notify('Column change staged locally. Apply changes to finish the demo operation.');
+    if (this.selectedColumn.primaryKey) {
+      this.notify('Primary-key columns are protected in this prototype. Update constraints through a reviewed backend change.', true);
+      return;
+    }
+    this.modal = 'column';
+    this.modalMode = 'edit';
+    this.columnDraft = { ...this.selectedColumn };
   }
+
+  saveColumn(): void {
+    if (this.isSaving) return;
+    const candidate: ColumnDefinition = {
+      ...this.columnDraft,
+      name: this.columnDraft.name.trim().toUpperCase()
+    };
+
+    if (!this.validIdentifier(candidate.name)) {
+      this.notify('Enter a valid Oracle column name (up to 30 characters).', true);
+      return;
+    }
+    if (this.table.columns.some(column =>
+      column.id !== candidate.id &&
+      column.status !== 'dropped' &&
+      column.name.toUpperCase() === candidate.name
+    )) {
+      this.notify('Column names must be unique.', true);
+      return;
+    }
+    if (['VARCHAR2', 'CHAR'].includes(candidate.dataType) &&
+        (!/^\d+$/.test(candidate.length) || Number(candidate.length) < 1 || Number(candidate.length) > 4000)) {
+      this.notify('VARCHAR2/CHAR length must be between 1 and 4000.', true);
+      return;
+    }
+    if (candidate.dataType === 'NUMBER' && candidate.length &&
+        (!/^\d+$/.test(candidate.length) || Number(candidate.length) < 1 || Number(candidate.length) > 38)) {
+      this.notify('NUMBER precision must be between 1 and 38.', true);
+      return;
+    }
+    if (candidate.scale && (!/^\d+$/.test(candidate.scale) || Number(candidate.scale) > 127)) {
+      this.notify('Scale must be a non-negative number no greater than 127.', true);
+      return;
+    }
+
+    const before = this.cloneTable(this.table);
+    if (this.modalMode === 'add') {
+      candidate.status = 'added';
+      this.table.columns.push(candidate);
+      const sampleValue = this.sampleDefaultValue(candidate.defaultValue);
+      this.table.rows.forEach(row => row[candidate.name] = sampleValue);
+    } else {
+      const existing = this.table.columns.find(column => column.id === candidate.id);
+      if (!existing) {
+        this.notify('The selected column no longer exists.', true);
+        return;
+      }
+      const previousName = existing.name;
+      const status = existing.status === 'added' ? 'added' : 'modified';
+      Object.assign(existing, candidate, { status });
+      if (previousName !== candidate.name) {
+        this.table.rows.forEach(row => {
+          if (Object.prototype.hasOwnProperty.call(row, previousName)) {
+            row[candidate.name] = row[previousName];
+            delete row[previousName];
+          }
+        });
+      }
+      if (existing.defaultValue && candidate.defaultValue !== before.columns.find(c => c.id === existing.id)?.defaultValue) {
+        const sampleValue = this.sampleDefaultValue(candidate.defaultValue);
+        this.table.rows.forEach(row => {
+          if (row[candidate.name] === null || row[candidate.name] === undefined || row[candidate.name] === '') {
+            row[candidate.name] = sampleValue;
+          }
+        });
+      }
+    }
+
+    this.refreshDataColumns();
+    this.selectedColumn = null;
+    this.modal = '';
+    this.persistOptimistically(
+      () => this.restoreTableSnapshot(before),
+      'Column updated in the screen and sample rows. DDL change remains staged.',
+      'Save failed. The previous table schema and row data were restored.'
+    );
+  }
+
   stageDropColumn(): void {
-    const c = this.selectedColumn;
-    if (!c) { this.notify('Select a column to delete.', true); return; }
-    if (c.primaryKey) { this.notify('Remove or migrate the primary-key constraint before dropping this column.', true); return; }
-    if (!confirm('Stage ' + c.name + ' for deletion? Applying this change can permanently remove column data.')) return;
-    if (c.status === 'added') this.table.columns = this.table.columns.filter(x => x.id !== c.id);
-    else c.status = 'dropped';
-    this.selectedColumn = null; this.refreshDataColumns();
-    this.notify('Column deletion staged. No database was changed.');
+    if (this.isSaving) return;
+    const selected = this.selectedColumn;
+    if (!selected) {
+      this.notify('Select a column to delete.', true);
+      return;
+    }
+    if (selected.primaryKey) {
+      this.notify('Remove or migrate the primary-key constraint before dropping this column.', true);
+      return;
+    }
+    if (!confirm('Stage ' + selected.name + ' for deletion? Its data will be removed when changes are applied.')) return;
+
+    const before = this.cloneTable(this.table);
+    if (selected.status === 'added') {
+      this.table.columns = this.table.columns.filter(column => column.id !== selected.id);
+      this.table.rows.forEach(row => delete row[selected.name]);
+    } else {
+      selected.status = 'dropped';
+    }
+    this.selectedColumn = null;
+    this.refreshDataColumns();
+    this.persistOptimistically(
+      () => this.restoreTableSnapshot(before),
+      'Column deletion staged. Its field is now hidden from the row grid.',
+      'Save failed. The previous table schema and row data were restored.'
+    );
   }
-  restoreColumn(c: ColumnDefinition): void { c.status = undefined; this.notify(c.name + ' restored.'); }
+
+  restoreColumn(column: ColumnDefinition): void {
+    if (this.isSaving) return;
+    const before = this.cloneTable(this.table);
+    column.status = undefined;
+    this.refreshDataColumns();
+    this.persistOptimistically(
+      () => this.restoreTableSnapshot(before),
+      'Column restored in the schema and data grids.',
+      'Restore failed. The previous table state was restored.'
+    );
+  }
+
   applySchemaChanges(): void {
-    if (!this.stagedCount) { this.notify('No schema changes to apply.', true); return; }
-    if (!confirm('Apply ' + this.stagedCount + ' staged schema change(s) to local demo state? No Oracle database is connected.')) return;
-    this.table.columns = this.table.columns.filter(c => c.status !== 'dropped').map(c => ({ ...c, status: undefined }));
-    this.refreshDataColumns(); this.takeSnapshot(); this.selectedColumn = null;
-    this.notify('Demo schema updated in browser memory only.');
+    if (this.isSaving) return;
+    if (!this.stagedCount) {
+      this.notify('There are no staged schema changes to apply.', true);
+      return;
+    }
+    if (!confirm('Apply the staged schema changes to local sample data? No Oracle database is connected.')) return;
+
+    const before = this.cloneTable(this.table);
+    const droppedNames = this.table.columns.filter(column => column.status === 'dropped').map(column => column.name);
+    this.table.columns = this.table.columns
+      .filter(column => column.status !== 'dropped')
+      .map(column => ({ ...column, status: undefined }));
+    this.table.rows.forEach(row => droppedNames.forEach(name => delete row[name]));
+    this.refreshDataColumns();
+    this.persistOptimistically(
+      () => this.restoreTableSnapshot(before),
+      'Schema changes applied to local demo state.',
+      'Apply failed. The previous schema and data were restored.',
+      () => this.takeSchemaSnapshot()
+    );
   }
+
   discardChanges(): void {
-    this.table.columns = this.snapshot.map(c => ({ ...c }));
-    this.table.rows = this.snapshotRows.map(r => ({ ...r }));
-    this.refreshDataColumns(); this.selectedColumn = null; this.selectedRow = null;
-    this.notify('Unapplied demo changes discarded.');
+    if (this.isSaving) return;
+    if (!this.stagedCount) {
+      this.notify('No staged schema changes to discard.');
+      return;
+    }
+    const currentColumns = this.table.columns;
+    const originalColumns = this.schemaBaseline.map(column => ({ ...column }));
+    const rows = this.table.rows.map(row => {
+      const restored: TableRow = {};
+      originalColumns.forEach(original => {
+        const current = currentColumns.find(column => column.id === original.id);
+        const currentName = current && current.status !== 'dropped' ? current.name : original.name;
+        restored[original.name] = row[currentName] ?? row[original.name] ?? null;
+      });
+      return restored;
+    });
+    this.table.columns = originalColumns;
+    this.table.rows = rows;
+    this.refreshDataColumns();
+    this.selectedColumn = null;
+    this.notify('Staged schema changes discarded. Row edits unrelated to schema changes are preserved.');
   }
+
   get sqlPreview(): string {
-    const colSql = this.liveColumns.map(c => '  ' + c.name + ' ' + this.sqlType(c) + (c.defaultValue ? ' DEFAULT ' + c.defaultValue : '') + (c.nullable ? '' : ' NOT NULL'));
-    const pk = this.liveColumns.find(c => c.primaryKey);
-    if (pk) colSql.push('  CONSTRAINT PK_' + this.table.name + ' PRIMARY KEY (' + pk.name + ')');
-    return 'CREATE TABLE ' + this.table.schema + '.' + this.table.name + ' (\n' + colSql.join(',\n') + '\n)\nTABLESPACE ' + this.table.tablespace + ';';
+    const definitions = this.liveColumns.map(column =>
+      '  ' + column.name + ' ' + this.sqlType(column) +
+      (column.defaultValue ? ' DEFAULT ' + column.defaultValue : '') +
+      (column.nullable ? '' : ' NOT NULL')
+    );
+    const primaryKey = this.liveColumns.find(column => column.primaryKey);
+    if (primaryKey) definitions.push('  CONSTRAINT PK_' + this.table.name + ' PRIMARY KEY (' + primaryKey.name + ')');
+    return 'CREATE TABLE ' + this.table.schema + '.' + this.table.name + ' (\n' +
+      definitions.join(',\n') + '\n)\nTABLESPACE ' + this.table.tablespace + ';';
   }
+
   get alterPreview(): string {
-    const changed = this.table.columns.filter(c => !!c.status);
-    if (!changed.length) return '-- No pending changes. Add, edit, or delete a column to preview ALTER TABLE.';
-    return changed.map(c => {
-      if (c.status === 'added') return 'ALTER TABLE ' + this.table.schema + '.' + this.table.name + ' ADD (' + c.name + ' ' + this.sqlType(c) + (c.defaultValue ? ' DEFAULT ' + c.defaultValue : '') + (c.nullable ? '' : ' NOT NULL') + ');';
-      if (c.status === 'dropped') return 'ALTER TABLE ' + this.table.schema + '.' + this.table.name + ' DROP COLUMN ' + c.name + ';';
-      return '-- Modified column ' + c.name + ': validate datatype, default, and nullability changes with backend before execution.';
+    const changed = this.table.columns.filter(column => Boolean(column.status));
+    if (!changed.length) {
+      return '-- No pending changes. Add, edit, or delete a column to preview ALTER TABLE.';
+    }
+    return changed.map(column => {
+      if (column.status === 'added') {
+        return 'ALTER TABLE ' + this.table.schema + '.' + this.table.name + ' ADD (' +
+          column.name + ' ' + this.sqlType(column) +
+          (column.defaultValue ? ' DEFAULT ' + column.defaultValue : '') +
+          (column.nullable ? '' : ' NOT NULL') + ');';
+      }
+      if (column.status === 'dropped') {
+        return 'ALTER TABLE ' + this.table.schema + '.' + this.table.name + ' DROP COLUMN ' + column.name + ';';
+      }
+      return '-- Modified column ' + column.name +
+        ': validate datatype, default, and nullability changes in the backend before execution.';
     }).join('\n');
   }
-  private sqlType(c: ColumnDefinition): string {
-    if (c.dataType === 'VARCHAR2' || c.dataType === 'CHAR') return c.dataType + (c.length ? '(' + c.length + ')' : '');
-    if (c.dataType === 'NUMBER') return c.length ? 'NUMBER(' + c.length + (c.scale ? ',' + c.scale : '') + ')' : 'NUMBER';
-    if (c.dataType === 'TIMESTAMP') return 'TIMESTAMP' + (c.length ? '(' + c.length + ')' : '');
-    return c.dataType;
+
+  private sqlType(column: ColumnDefinition): string {
+    if (column.dataType === 'VARCHAR2' || column.dataType === 'CHAR') {
+      return column.dataType + (column.length ? '(' + column.length + ')' : '');
+    }
+    if (column.dataType === 'NUMBER') {
+      return column.length ? 'NUMBER(' + column.length + (column.scale ? ',' + column.scale : '') + ')' : 'NUMBER';
+    }
+    if (column.dataType === 'TIMESTAMP') {
+      return 'TIMESTAMP' + (column.length ? '(' + column.length + ')' : '');
+    }
+    return column.dataType;
   }
+
   openCreate(): void {
-    this.page = 'create'; this.createStep = 1;
+    this.page = 'create';
+    this.createStep = 1;
     this.createMeta = { schema: 'APP_OWNER', name: '', tablespace: 'USERS', comment: '' };
-    this.createColumns = []; this.createPrimaryKeyId = null;
+    this.createColumns = [];
+    this.createPrimaryKeyId = null;
+    this.columnDraft = blankColumn(this.nextId++);
   }
+
   addCreateColumn(): void {
     const name = this.columnDraft.name.trim().toUpperCase();
-    if (!this.validIdentifier(name)) { this.notify('Enter a valid column name.', true); return; }
-    if (this.createColumns.some(c => c.name === name)) { this.notify('Column names must be unique.', true); return; }
-    this.createColumns.push({ ...this.columnDraft, id: this.nextId++, name });
+    if (!this.validIdentifier(name)) {
+      this.notify('Enter a valid Oracle column name.', true);
+      return;
+    }
+    if (this.createColumns.some(column => column.name === name)) {
+      this.notify('Column names must be unique.', true);
+      return;
+    }
+    const candidate = { ...this.columnDraft, id: this.nextId++, name };
+    if (['VARCHAR2', 'CHAR'].includes(candidate.dataType) &&
+        (!/^\d+$/.test(candidate.length) || Number(candidate.length) < 1 || Number(candidate.length) > 4000)) {
+      this.notify('VARCHAR2/CHAR length must be between 1 and 4000.', true);
+      return;
+    }
+    this.createColumns.push(candidate);
     this.columnDraft = blankColumn(this.nextId++);
-    this.notify('Column added to table draft.');
+    this.notify('Column added to the table draft.');
   }
-  removeCreateColumn(id: number): void { this.createColumns = this.createColumns.filter(c => c.id !== id); if (this.createPrimaryKeyId === id) this.createPrimaryKeyId = null; }
+
+  removeCreateColumn(id: number): void {
+    this.createColumns = this.createColumns.filter(column => column.id !== id);
+    if (this.createPrimaryKeyId === id) this.createPrimaryKeyId = null;
+  }
+
   nextCreateStep(): void {
-    if (this.createStep === 1 && !this.validIdentifier(this.createMeta.name.trim().toUpperCase())) { this.notify('Enter a valid Oracle table name.', true); return; }
-    if (this.createStep === 2 && !this.createColumns.length) { this.notify('Add at least one column.', true); return; }
+    if (this.createStep === 1 && !this.validIdentifier(this.createMeta.name.trim().toUpperCase())) {
+      this.notify('Enter a valid Oracle table name (up to 30 characters).', true);
+      return;
+    }
+    if (this.createStep === 2 && !this.createColumns.length) {
+      this.notify('Add at least one column before continuing.', true);
+      return;
+    }
     this.createStep = Math.min(3, this.createStep + 1);
   }
+
   createTableNow(): void {
+    if (this.isSaving) return;
     const name = this.createMeta.name.trim().toUpperCase();
-    if (this.mockDb.tables.some(t => t.name === name && t.schema === this.createMeta.schema)) { this.notify('This table already exists in demo data.', true); return; }
-    if (!this.createColumns.length) { this.notify('Add at least one column.', true); this.createStep = 2; return; }
-    if (this.createPrimaryKeyId === null) { this.notify('Select a primary-key column.', true); return; }
-    if (!confirm('Create ' + this.createMeta.schema + '.' + name + ' in local demo memory? No database is connected.')) return;
-    const columns = this.createColumns.map(c => ({ ...c, primaryKey: c.id === this.createPrimaryKeyId, nullable: c.id === this.createPrimaryKeyId ? false : c.nullable }));
-    this.mockDb.tables.push({ ...this.createMeta, name, columns, rows: [] });
-    this.selectedTableName = name; this.page = 'schema'; this.refreshDataColumns(); this.takeSnapshot();
-    this.notify('Table created in local demo memory only.');
+    if (!this.validIdentifier(name)) {
+      this.notify('Enter a valid Oracle table name.', true);
+      this.createStep = 1;
+      return;
+    }
+    if (this.mockDb.tables.some(table => table.name === name && table.schema === this.createMeta.schema)) {
+      this.notify('A table with this name already exists.', true);
+      return;
+    }
+    if (!this.createColumns.length) {
+      this.notify('Add at least one column.', true);
+      this.createStep = 2;
+      return;
+    }
+    if (this.createPrimaryKeyId === null) {
+      this.notify('Select a primary-key column.', true);
+      return;
+    }
+    if (!confirm('Create ' + this.createMeta.schema + '.' + name + ' in local sample data? No Oracle database is connected.')) return;
+
+    const previousTableName = this.selectedTableName;
+    const newTable: TableSchema = {
+      ...this.createMeta,
+      name,
+      columns: this.createColumns.map(column => ({
+        ...column,
+        primaryKey: column.id === this.createPrimaryKeyId,
+        nullable: column.id === this.createPrimaryKeyId ? false : column.nullable
+      })),
+      rows: []
+    };
+    this.mockDb.tables.push(newTable);
+    this.selectedTableName = name;
+    this.page = 'workspace';
+    this.refreshDataColumns();
+    this.persistOptimistically(
+      () => {
+        const index = this.mockDb.tables.findIndex(table => table.name === name && table.schema === newTable.schema);
+        if (index >= 0) this.mockDb.tables.splice(index, 1);
+        this.selectedTableName = previousTableName;
+        this.page = 'create';
+        this.refreshDataColumns();
+      },
+      'Table created in local sample data. The data grid is ready for row inserts.',
+      'Create failed. The table was removed and the previous selection restored.',
+      () => this.takeSchemaSnapshot()
+    );
   }
+
   get createSql(): string {
     const name = this.createMeta.name.trim().toUpperCase() || 'TABLE_NAME';
-    const sql = this.createColumns.map(c => '  ' + c.name + ' ' + this.sqlType(c) + (c.nullable ? '' : ' NOT NULL') + (c.defaultValue ? ' DEFAULT ' + c.defaultValue : ''));
-    const pk = this.createColumns.find(c => c.id === this.createPrimaryKeyId);
-    if (pk) sql.push('  CONSTRAINT PK_' + name + ' PRIMARY KEY (' + pk.name + ')');
-    return 'CREATE TABLE ' + this.createMeta.schema + '.' + name + ' (\n' + sql.join(',\n') + '\n)\nTABLESPACE ' + this.createMeta.tablespace + ';';
+    const definitions = this.createColumns.map(column =>
+      '  ' + column.name + ' ' + this.sqlType(column) +
+      (column.nullable ? '' : ' NOT NULL') +
+      (column.defaultValue ? ' DEFAULT ' + column.defaultValue : '')
+    );
+    const primaryKey = this.createColumns.find(column => column.id === this.createPrimaryKeyId);
+    if (primaryKey) definitions.push('  CONSTRAINT PK_' + name + ' PRIMARY KEY (' + primaryKey.name + ')');
+    return 'CREATE TABLE ' + this.createMeta.schema + '.' + name + ' (\n' +
+      definitions.join(',\n') + '\n)\nTABLESPACE ' + this.createMeta.tablespace + ';';
   }
+
   openRow(mode: 'insert' | 'edit'): void {
-    if (mode === 'edit' && !this.selectedRow) { this.notify('Select a grid row first.', true); return; }
-    this.modal = 'row'; this.modalMode = mode;
-    this.rowDraft = {};
-    this.liveColumns.forEach(c => this.rowDraft[c.name] = mode === 'edit' ? this.selectedRow?.[c.name] ?? null : null);
-  }
-  saveRow(): void {
-    const required = this.liveColumns.find(c => !c.nullable && !c.primaryKey && (this.rowDraft[c.name] === null || this.rowDraft[c.name] === ''));
-    if (required) { this.notify(required.name + ' is required.', true); return; }
-    if (this.modalMode === 'insert') {
-      const pk = this.liveColumns.find(c => c.primaryKey);
-      if (pk && (this.rowDraft[pk.name] === null || this.rowDraft[pk.name] === '')) { this.notify('Primary key ' + pk.name + ' is required.', true); return; }
-      if (pk && this.table.rows.some(row => row[pk.name] === this.rowDraft[pk.name])) { this.notify('Primary key values must be unique.', true); return; }
-      this.table.rows = [...this.table.rows, { ...this.rowDraft }];
-    } else if (this.selectedRow) {
-      const idx = this.table.rows.indexOf(this.selectedRow);
-      if (idx >= 0) this.table.rows = this.table.rows.map((r, i) => i === idx ? { ...this.rowDraft } : r);
+    if (this.isSaving) return;
+    if (mode === 'edit' && !this.selectedRow) {
+      this.notify('Select a row in the data grid first.', true);
+      return;
     }
-    this.modal = ''; this.selectedRow = null;
-    this.notify('Row saved to local demo memory only.');
+    this.modal = 'row';
+    this.modalMode = mode;
+    this.rowDraft = {};
+    this.liveColumns.forEach(column => {
+      this.rowDraft[column.name] = mode === 'edit' ? this.selectedRow?.[column.name] ?? null : null;
+    });
   }
+
+  saveRow(): void {
+    if (this.isSaving) return;
+    for (const column of this.liveColumns) {
+      const value = this.rowDraft[column.name];
+      if (!column.nullable && (value === null || value === undefined || value === '')) {
+        this.notify(column.name + ' is required.', true);
+        return;
+      }
+      if (column.dataType === 'NUMBER' && value !== null && value !== undefined && value !== '' && !Number.isFinite(Number(value))) {
+        this.notify(column.name + ' must be numeric.', true);
+        return;
+      }
+      if (column.unique && value !== null && value !== undefined && value !== '') {
+        const duplicate = this.table.rows.some(row => row !== this.selectedRow && row[column.name] === value);
+        if (duplicate) {
+          this.notify(column.name + ' must be unique.', true);
+          return;
+        }
+      }
+    }
+
+    const before = this.cloneTable(this.table);
+    const draft: TableRow = {};
+    this.liveColumns.forEach(column => {
+      const value = this.rowDraft[column.name];
+      draft[column.name] = value === '' || value === undefined ? null :
+        column.dataType === 'NUMBER' && value !== null ? Number(value) :
+        value as string | number | boolean | null;
+    });
+
+    if (this.modalMode === 'insert') {
+      this.table.rows = [...this.table.rows, draft];
+    } else if (this.selectedRow) {
+      const index = this.table.rows.indexOf(this.selectedRow);
+      if (index < 0) {
+        this.notify('The selected row no longer exists. Refresh the table and try again.', true);
+        return;
+      }
+      this.table.rows = this.table.rows.map((row, rowIndex) => rowIndex === index ? draft : row);
+    }
+
+    this.modal = '';
+    this.selectedRow = draft;
+    this.persistOptimistically(
+      () => this.restoreTableSnapshot(before),
+      this.modalMode === 'insert' ? 'Row inserted into local sample data.' : 'Row updated in local sample data.',
+      'Save failed. The previous row data was restored.'
+    );
+  }
+
   deleteRow(): void {
-    if (!this.selectedRow) { this.notify('Select a row in the grid first.', true); return; }
-    if (!confirm('Delete this row from local demo data?')) return;
-    this.table.rows = this.table.rows.filter(r => r !== this.selectedRow);
-    this.selectedRow = null; this.notify('Row deleted from local demo memory.');
+    if (this.isSaving) return;
+    if (!this.selectedRow) {
+      this.notify('Select a row in the data grid first.', true);
+      return;
+    }
+    if (!confirm('Delete the selected row from local sample data?')) return;
+    const before = this.cloneTable(this.table);
+    const selected = this.selectedRow;
+    this.table.rows = this.table.rows.filter(row => row !== selected);
+    this.selectedRow = null;
+    this.persistOptimistically(
+      () => this.restoreTableSnapshot(before),
+      'Row deleted from local sample data.',
+      'Delete failed. The previous row data was restored.'
+    );
   }
+
   copySql(sql: string): void {
-    navigator.clipboard.writeText(sql).then(() => this.notify('SQL copied to clipboard.'))
-      .catch(() => this.notify('Clipboard access blocked; select and copy the preview manually.', true));
+    navigator.clipboard.writeText(sql)
+      .then(() => this.notify('SQL copied to clipboard.'))
+      .catch(() => this.notify('Clipboard access is unavailable; select and copy the SQL preview manually.', true));
   }
 }
