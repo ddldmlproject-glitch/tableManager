@@ -221,7 +221,7 @@ export class AppComponent implements OnInit {
       event.api.refreshCells({ force: true });
     }
 
-    if (column?.unique && nextValue !== null && nextValue !== '' &&
+    if (column && (column.unique || column.primaryKey) && nextValue !== null && nextValue !== '' &&
         this.table.rows.some(other => other !== row && other[field] === nextValue)) {
       row[field] = event.oldValue;
       event.api.refreshCells({ force: true });
