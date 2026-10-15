@@ -675,10 +675,23 @@ export class AppComponent implements OnInit {
         this.notify(column.name + ' must be numeric.', true);
         return;
       }
-      if (column.unique && value !== null && value !== undefined && value !== '') {
-        const duplicate = this.table.rows.some(row => row !== this.selectedRow && row[column.name] === value);
+      if ((column.unique || column.primaryKey) && value !== null && value !== undefined && value !== '') {
+        const comparableValue = column.dataType === 'NUMBER' ? Number(value) : value;
+        const duplicate = this.table.rows.some(row => row !== this.selectedRow && row[column.name] === comparableValue);
         if (duplicate) {
           this.notify(column.name + ' must be unique.', true);
+          return;
+        }
+      }
+    }
+
+    if (this.modalMode === 'insert') {
+      const primaryKey = this.liveColumns.find(column => column.primaryKey);
+      if (primaryKey) {
+        const value = this.rowDraft[primaryKey.name];
+        const comparableValue = primaryKey.dataType === 'NUMBER' && value !== '' && value !== null ? Number(value) : value;
+        if (this.table.rows.some(row => row[primaryKey.name] === comparableValue)) {
+          this.notify(primaryKey.name + ' already exists. Choose a unique primary-key value.', true);
           return;
         }
       }
@@ -703,6 +716,7 @@ export class AppComponent implements OnInit {
       }
       this.table.rows = this.table.rows.map((row, rowIndex) => rowIndex === index ? draft : row);
     }
+    this.refreshVisibleRows();
 
     this.modal = '';
     this.selectedRow = draft;
