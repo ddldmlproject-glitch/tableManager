@@ -30,15 +30,15 @@
         </div>
         <div class="table-picker">
           <label for="table-select">Selected table</label>
-          <select id="table-select" [ngModel]="selectedTableName" (ngModelChange)="selectTable($event)">
-            <option *ngFor="let item of tables" [value]="item.name">{{ item.schema }}.{{ item.name }}</option>
+          <select id="table-select" [ngModel]="selectedTableKey" (ngModelChange)="selectTableKey($event)">
+            <option *ngFor="let item of tables" [value]="item.schema + '.' + item.name">{{ item.schema }}.{{ item.name }}</option>
           </select>
         </div>
       </section>
 
       <section class="metric-row" aria-label="Selected table summary">
         <article class="metric-card"><div class="metric-icon blue">▦</div><div><span>VISIBLE COLUMNS</span><strong>{{ liveColumns.length }}</strong><small>Schema fields</small></div></article>
-        <article class="metric-card"><div class="metric-icon violet">▤</div><div><span>SAMPLE RECORDS</span><strong>{{ rows.length }}</strong><small>Rows in the data grid</small></div></article>
+        <article class="metric-card"><div class="metric-icon violet">▤</div><div><span>SAMPLE RECORDS</span><strong>{{ totalRowCount }}</strong><small>Rows in the data grid</small></div></article>
         <article class="metric-card"><div class="metric-icon green">⌑</div><div><span>PRIMARY KEY</span><strong class="metric-string">{{ primaryKeyName }}</strong><small>Selected table key</small></div></article>
         <article class="metric-card"><div class="metric-icon amber">◷</div><div><span>PENDING DDL</span><strong>{{ stagedCount }}</strong><small>{{ stagedCount ? 'Changes staged for apply' : 'Schema is unchanged' }}</small></div></article>
       </section>
@@ -85,7 +85,7 @@
         <div class="panel-heading">
           <div class="heading-icon data-icon">▦</div>
           <div class="panel-heading-copy"><h2>Table data</h2><p>{{ table.schema }}.{{ table.name }} · Existing records update on this screen</p></div>
-          <span class="counter">{{ rows.length }} ROWS</span>
+          <span class="counter">{{ totalRowCount }} ROWS</span>
         </div>
         <div class="toolbar data-toolbar">
           <div class="toolbar-actions">
@@ -98,19 +98,24 @@
         <div class="grid-shell data-grid">
           <ag-grid-angular
             [theme]="gridTheme"
-            [rowData]="rows"
+            [rowModelType]="'infinite'"
+            [datasource]="dataSource"
+            [cacheBlockSize]="cacheBlockSize"
+            [maxBlocksInCache]="maxBlocksInCache"
+            [maxConcurrentDatasourceRequests]="2"
+            [blockLoadDebounceMillis]="100"
             [columnDefs]="dataColDefs"
             [defaultColDef]="dataDefaultColDef"
+            [getRowId]="getDataRowId"
             [rowSelection]="rowSelection"
-            [pagination]="true"
-            [paginationPageSize]="10"
             [animateRows]="true"
             [stopEditingWhenCellsLoseFocus]="true"
+            (gridReady)="onDataGridReady($event)"
             (selectionChanged)="onDataSelection($event)"
             (cellValueChanged)="onDataCellChanged($event)">
           </ag-grid-angular>
         </div>
-        <div class="grid-foot"><span><i class="blue-dot"></i> Edit a cell directly or select a row to edit/delete it. Row operations use sample data until APIs are connected.</span><span *ngIf="isSaving" class="saving-label">Saving changes…</span></div>
+        <div class="grid-foot"><span><i class="blue-dot"></i> Scroll to load more rows in 20-row blocks. Sorting and filtering are sent to the data source; writes update optimistically and roll back on failure.</span><span *ngIf="isSaving" class="saving-label">Saving changes…</span></div>
       </section>
 
       <section class="panel sql-panel">
