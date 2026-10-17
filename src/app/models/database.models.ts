@@ -38,6 +38,7 @@ export interface TablePageRequest {
   endRow: number;
   sortModel?: Array<{ colId: string; sort: 'asc' | 'desc' }>;
   filterModel?: Record<string, unknown>;
+  searchText?: string;
 }
 
 /** API must return totalCount so AG Grid knows when it has reached the final row. */
@@ -66,4 +67,4 @@ export interface RowCrudCommand {
 export interface RowCrudResponse {
   row?: TableRow;
   commitVersion?: number;
-}  searchText?: string;
+}
