@@ -202,6 +202,8 @@ button{cursor:pointer}
   --sm-checkbox-border: #566782;
   --sm-checkbox-checked-bg: #174bd1;
   --sm-checkbox-tick: #ffffff;
+  --sm-label-text: #7c879c;
+  --sm-accent-text: #5272b6;
 }
 
 /* Common Citi/IGDS host theme patterns. If the host uses a different selector,
@@ -211,7 +213,8 @@ button{cursor:pointer}
 :host-context(.theme-dark),
 :host-context(.dark),
 :host-context([data-theme='dark']),
-:host-context([data-color-scheme='dark']) {
+:host-context([data-color-scheme='dark']),
+:host-context([class*='dark']) {
   --sm-page-bg: #111827;
   --sm-surface: #1b2433;
   --sm-surface-muted: #222d3e;
@@ -230,6 +233,8 @@ button{cursor:pointer}
   --sm-checkbox-border: #c2ccda;
   --sm-checkbox-checked-bg: #3478f6;
   --sm-checkbox-tick: #ffffff;
+  --sm-label-text: #b1bdcd;
+  --sm-accent-text: #9bbcff;
 }
 
 /* Make the full feature independently scrollable even if an MFE content shell
@@ -401,4 +406,74 @@ button{cursor:pointer}
 
 :host .modal-backdrop {
   overflow-y: auto;
+}
+
+:host .eyebrow {
+  color: var(--sm-accent-text);
+}
+
+:host .metric-card span,
+:host .counter,
+:host .table-picker label,
+:host .pk-list span {
+  color: var(--sm-label-text);
+}
+
+:host .counter {
+  background: var(--sm-surface-muted);
+  border-color: var(--sm-border);
+}
+
+:host .step {
+  color: var(--sm-label-text);
+}
+
+:host .step i {
+  background: var(--sm-surface);
+  color: var(--sm-text-muted);
+  border-color: var(--sm-border);
+}
+
+:host .stepper hr {
+  background: var(--sm-border);
+}
+
+:host .add-form,
+:host .dropped-section {
+  background: var(--sm-surface-muted);
+  border-color: var(--sm-border);
+}
+
+:host .draft-item {
+  background: var(--sm-surface-muted);
+  color: var(--sm-text);
+  border: 1px solid var(--sm-border);
+}
+
+:host .draft-item small {
+  color: var(--sm-text-muted);
+}
+
+:host .close-button {
+  background: var(--sm-surface-muted);
+  color: var(--sm-text-muted);
+}
+
+:host .dropped-row span {
+  color: var(--sm-text-muted);
+}
+
+:host .dropped-label {
+  color: #d46b76;
+}
+
+:host .sql-subheading {
+  border-color: var(--sm-border);
+}
+
+:host .grid-shell > ag-grid-angular {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
 }
