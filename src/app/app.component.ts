@@ -559,39 +559,82 @@ export class AppComponent implements OnInit {
 
   private restoreTableSnapshot(snapshot: TableSchema): void {
     const replacement = this.cloneTable(snapshot);
-    const index = this.mockDb.tables.findIndex(
-      item => item.name === snapshot.name && item.schema === snapshot.schema
-    );
-    if (index >= 0) this.mockDb.tables[index] = replacement;
-    else this.mockDb.tables.push(replacement);
+    if (this.useMockData) {
+      const index = this.mockDb.tables.findIndex(
+        item => item.name === snapshot.name && item.schema === snapshot.schema
+      );
+      if (index >= 0) this.mockDb.tables[index] = replacement;
+      else this.mockDb.tables.push(replacement);
+    } else {
+      this.activeLiveTable = replacement;
+      const index = this.liveTableCatalog.findIndex(
+        item => item.name === snapshot.name && item.schema === snapshot.schema
+      );
+      if (index >= 0) this.liveTableCatalog[index] = replacement;
+    }
     this.selectedTableName = replacement.name;
     this.selectedColumn = null;
     this.selectedRow = null;
     this.refreshDataColumns();
     this.refreshVisibleRows();
+    this.refreshInfiniteRows();
   }
 
   private persistOptimistically(
     rollback: () => void,
     successMessage: string,
     failureMessage: string,
-    onSuccess?: () => void
+    onSuccess?: (result?: unknown) => void,
+    remoteRequest?: () => Observable<unknown>
   ): void {
+    // Staged DDL edits are local until the user explicitly clicks Apply.
+    if (!this.useMockData && !remoteRequest) {
+      onSuccess?.();
+      this.notify(successMessage);
+      return;
+    }
+
     const shouldFail = this.failNextSave;
     this.failNextSave = false;
     this.isSaving = true;
 
-    // Mock latency mirrors an async REST request. The UI is already updated.
-    window.setTimeout(() => {
+    const failed = (error?: unknown): void => {
       this.isSaving = false;
-      if (shouldFail) {
-        rollback();
-        this.notify(failureMessage, true);
-        return;
-      }
-      onSuccess?.();
-      this.notify(successMessage);
-    }, 350);
+      rollback();
+      this.refreshInfiniteRows();
+      this.notify(error ? this.apiErrorMessage(failureMessage, error) : failureMessage, true);
+    };
+
+    // The demo's failure switch uses the same rollback path as a rejected HTTP call.
+    if (this.useMockData || shouldFail) {
+      window.setTimeout(() => {
+        this.isSaving = false;
+        if (shouldFail) {
+          rollback();
+          this.refreshInfiniteRows();
+          this.notify(failureMessage, true);
+          return;
+        }
+        onSuccess?.();
+        this.notify(successMessage);
+      }, 350);
+      return;
+    }
+
+    if (!remoteRequest) {
+      this.isSaving = false;
+      this.notify('No API operation was configured for this action.', true);
+      return;
+    }
+
+    remoteRequest().subscribe({
+      next: result => {
+        this.isSaving = false;
+        onSuccess?.(result);
+        this.notify(successMessage);
+      },
+      error: error => failed(error)
+    });
   }
 
   private notify(message: string, error = false): void {
