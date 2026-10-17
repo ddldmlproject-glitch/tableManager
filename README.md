@@ -60,3 +60,16 @@ See docs/BACKEND-INTEGRATION.md. The proposed endpoints are placeholders to agre
 - The API failure toggle simulates rollback behavior; it is not a real HTTP request.
 - Generated DDL is preview only.
 - Never connect the browser directly to Oracle or execute arbitrary SQL strings from the frontend. The backend must authorize operations, validate identifiers/constraints, generate DDL from structured schema metadata, bind DML values, and audit destructive operations.
+
+## Citi MFE integration and production data flow
+
+The component selector is `app-oracle-schema-manager`; public exports are available from `src/app/public-api.ts`. The screen's CSS is component-scoped to reduce style leakage into the Citi shell.
+
+**Read [docs/CITI-MFE-INTEGRATION.md](docs/CITI-MFE-INTEGRATION.md) before integrating this UI into the private Citi MFE.** It covers routing/library integration, GET + POST-only CRUD contracts, AG Grid Community infinite scrolling in 20-row blocks, optimistic updates/rollback, stale Elasticsearch reads, and whether to use NgRx.
+
+Integration primitives added:
+- `DatabaseApiService`: GET-based reads and POST command requests for INSERT/UPDATE/DELETE/CREATE_TABLE/ALTER_TABLE. Endpoint paths are configurable examples and must match the approved Citi API contract.
+- `createInfiniteRowsDatasource`: fetches the requested block as the user scrolls and passes sort/filter information to the backend.
+- `OptimisticMutationService`: applies local changes immediately and restores the caller's captured previous state when a request fails.
+
+**Important:** the standalone demo still defaults to mock data to avoid breaking local development. The HTTP adapter is not automatically substituted into the mock-backed demo component because the private Citi API endpoint and DTO contracts were not provided. Wire the API repository into the Citi feature using the integration guide; do not point it at Elasticsearch and immediately refetch after every write, since its index is eventually consistent.
