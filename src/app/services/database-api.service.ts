@@ -105,7 +105,7 @@ export class DatabaseApiService {
       row,
       requestId: this.requestId()
     };
-    return this.http.post<TableRow>(this.url('commands', { schema, table: tableName }), command);
+    return this.http.post<TableRow>(this.url('insertRow', { schema, table: tableName }), command);
   }
 
   updateRow(
@@ -124,7 +124,7 @@ export class DatabaseApiService {
       changes,
       requestId: this.requestId()
     };
-    return this.http.post<TableRow>(this.url('commands', { schema, table: tableName }), command);
+    return this.http.post<TableRow>(this.url('updateRow', { schema, table: tableName }), command);
   }
 
   deleteRow(
@@ -141,7 +141,7 @@ export class DatabaseApiService {
       keyValue,
       requestId: this.requestId()
     };
-    return this.http.post(this.url('commands', { schema, table: tableName }), command);
+    return this.http.post(this.url('deleteRow', { schema, table: tableName }), command);
   }
 
   private normalizePage(response: RowsPage<TableRow> | TableRow[], request: RowsPageRequest): RowsPage<TableRow> {
