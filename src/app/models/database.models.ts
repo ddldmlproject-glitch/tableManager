@@ -66,4 +66,4 @@ export interface RowCrudCommand {
 export interface RowCrudResponse {
   row?: TableRow;
   commitVersion?: number;
-}
+}  searchText?: string;
