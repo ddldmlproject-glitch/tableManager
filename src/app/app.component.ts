@@ -143,19 +143,25 @@ export class AppComponent implements OnInit {
   }
 
   get selectedTableKey(): string {
-    return this.useMockData
-      ? this.selectedTableName
-      : (this.activeLiveTable?.schema ??
-          this.liveTableCatalog.find(item => item.name === this.selectedTableName)?.schema ??
-          '') + '.' + this.selectedTableName;
+    if (this.useMockData) {
+      const selected = this.mockDb.tableByName(this.selectedTableName);
+      return selected ? selected.schema + '.' + selected.name : this.selectedTableName;
+    }
+    return (this.activeLiveTable?.schema ??
+        this.liveTableCatalog.find(item => item.name === this.selectedTableName)?.schema ??
+        '') + '.' + this.selectedTableName;
   }
 
   selectTableKey(key: string): void {
+    const separator = key.indexOf('.');
+    const schema = separator >= 0 ? key.slice(0, separator) : '';
+    const name = separator >= 0 ? key.slice(separator + 1) : key;
     if (this.useMockData) {
-      this.selectTable(key);
+      const selected = this.mockDb.tables.find(item => item.schema === schema && item.name === name);
+      if (selected) this.selectTable(selected.name);
       return;
     }
-    const selected = this.liveTableCatalog.find(item => item.schema + '.' + item.name === key);
+    const selected = this.liveTableCatalog.find(item => item.schema === schema && item.name === name);
     if (selected) this.selectTable(selected.name, selected.schema);
   }
 
