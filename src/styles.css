@@ -4,3 +4,19 @@ html, body {
   margin: 0;
   min-height: 100%;
 }
+
+/* Match the standalone grid's compact enterprise appearance. Theme colors and
+   spacing are configured with themeQuartz.withParams() in the component. */
+
+.schema-manager-grid .ag-header-cell-label {
+  font-weight: 700;
+}
+.schema-manager-grid .ag-header-cell-text {
+  letter-spacing: .25px;
+}
+.schema-manager-grid .ag-cell {
+  border-right: 1px solid #f0f2f6;
+}
+.schema-manager-grid .ag-row {
+  border-bottom: 1px solid #edf0f5;
+}
