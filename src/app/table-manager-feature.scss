@@ -1,0 +1,194 @@
+/* Feature-scoped styles: only elements rendered inside <app-table-manager-feature> are affected. */
+app-table-manager-feature {
+  display: block;
+  min-width: 0;
+  color: #18243b;
+  font-family: Inter, Arial, sans-serif;
+}
+app-table-manager-feature .app {
+  min-height: 100vh;
+  background: #f3f5f9;
+  font-size: 13px;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+app-table-manager-feature *{box-sizing:border-box}
+app-table-manager-feature button, app-table-manager-feature input, app-table-manager-feature select{font:inherit}
+app-table-manager-feature button{cursor:pointer}
+app-table-manager-feature .app{min-height:100vh}
+app-table-manager-feature .topbar{height:66px;background:#08112b;color:#fff;display:flex;align-items:center;gap:16px;padding:0 28px;border-bottom:1px solid #253251}
+app-table-manager-feature .brand{display:flex;align-items:center;gap:15px;color:inherit;text-decoration:none;min-width:0}
+app-table-manager-feature .brand-mark{font-size:29px;font-style:italic;letter-spacing:-3px;font-weight:800;border-right:1px solid #2b3656;padding-right:18px}
+app-table-manager-feature .brand-mark span{color:#45b9e5}
+app-table-manager-feature .brand-copy strong{display:block;font-size:14px;letter-spacing:.1px;font-weight:650}
+app-table-manager-feature .brand-copy small{display:block;margin-top:4px;color:#8796bb;font-size:8px;letter-spacing:1px}
+app-table-manager-feature .topbar-spacer{flex:1}
+app-table-manager-feature .failure-toggle{display:flex;align-items:center;gap:7px;color:#d9e1f5;font-size:10px;white-space:nowrap;cursor:pointer}
+app-table-manager-feature .failure-toggle input{accent-color:#ffbc58}
+app-table-manager-feature .demo-pill{display:flex;align-items:center;gap:6px;padding:7px 10px;background:#17274d;border:1px solid #2c3e6a;border-radius:15px;color:#c7d5f4;font-size:8px;letter-spacing:.8px;white-space:nowrap}
+app-table-manager-feature .demo-pill i{display:block;width:6px;height:6px;border-radius:50%;background:#36cc98}
+app-table-manager-feature .view-tabs{height:47px;background:#fff;border-bottom:1px solid #e2e7ef;display:flex;align-items:stretch;gap:4px;padding:0 28px}
+app-table-manager-feature .view-tabs>button{border:0;border-bottom:2px solid transparent;background:transparent;color:#6d7890;padding:0 17px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600}
+app-table-manager-feature .view-tabs>button span{font-size:15px}
+app-table-manager-feature .view-tabs>button.active{color:#1849c4;border-bottom-color:#1849c4}
+app-table-manager-feature .view-tabs>button em{font-style:normal;font-size:8px;padding:3px 5px;background:#edf2ff;color:#315ac4;border-radius:3px}
+app-table-manager-feature .tabs-spacer{flex:1}
+app-table-manager-feature .environment-note{align-self:center;color:#9aa4b5;font-size:9px}
+app-table-manager-feature .environment-note b{padding:0 5px;color:#d0d5df}
+app-table-manager-feature .content{min-width:0;max-width:1700px;width:100%;margin:0 auto;padding:28px 32px 20px}
+app-table-manager-feature .page-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px}
+app-table-manager-feature .page-heading h1{font-size:24px;letter-spacing:-.65px;font-weight:650;color:#15213b;margin:0 0 7px}
+app-table-manager-feature .page-heading p{font-size:11px;color:#788398;margin:0;line-height:1.5}
+app-table-manager-feature .eyebrow{font-size:9px;font-weight:750;letter-spacing:1.05px;color:#5272b6;margin-bottom:8px}
+app-table-manager-feature .table-picker{display:flex;flex-direction:column;gap:6px;width:min(360px,40%);flex-shrink:0}
+app-table-manager-feature .table-picker label{font-size:9px;font-weight:700;color:#66728a;letter-spacing:.5px}
+app-table-manager-feature .table-picker select{height:39px;background:#fff;border:1px solid #cfd7e5;border-radius:7px;padding:0 11px;color:#22314d;font-weight:600;font-size:11px;outline:none}
+app-table-manager-feature .table-picker select:focus{border-color:#3467d9;box-shadow:0 0 0 3px #2457d51a}
+app-table-manager-feature .metric-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:19px}
+app-table-manager-feature .metric-card{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e3e8f0;border-radius:10px;padding:15px 16px;min-width:0;box-shadow:0 2px 10px #18305a04}
+app-table-manager-feature .metric-icon{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;border-radius:8px;font-size:17px;font-weight:700}
+app-table-manager-feature .metric-icon.blue{background:#edf2ff;color:#285bcd}
+app-table-manager-feature .metric-icon.violet{background:#f2edff;color:#7657c4}
+app-table-manager-feature .metric-icon.green{background:#e5f8f0;color:#15936b}
+app-table-manager-feature .metric-icon.amber{background:#fff4df;color:#b37819}
+app-table-manager-feature .metric-card span{display:block;font-size:8px;font-weight:750;color:#7c879c;letter-spacing:.8px;white-space:nowrap}
+app-table-manager-feature .metric-card strong{display:block;font-size:21px;color:#172643;margin:5px 0 2px;line-height:1.2}
+app-table-manager-feature .metric-card .metric-string{font-size:13px;overflow-wrap:anywhere}
+app-table-manager-feature .metric-card small{display:block;color:#97a0b0;font-size:9px;white-space:normal}
+app-table-manager-feature .panel{background:#fff;border:1px solid #e1e6ef;border-radius:10px;box-shadow:0 3px 13px #14264b05;margin-bottom:17px;overflow:hidden;min-width:0}
+app-table-manager-feature .panel-heading{display:flex;align-items:center;gap:10px;min-height:61px;padding:13px 17px;border-bottom:1px solid #edf0f5}
+app-table-manager-feature .heading-icon{display:grid;place-items:center;flex-shrink:0;width:29px;height:29px;background:#edf2ff;color:#2458ca;font-size:16px;border-radius:7px}
+app-table-manager-feature .heading-icon.data-icon{background:#e4f6f0;color:#198363}
+app-table-manager-feature .heading-icon.sql-icon{background:#111a37;color:#ccd6ff}
+app-table-manager-feature .panel-heading-copy{min-width:0}
+app-table-manager-feature .panel-heading h2{font-size:12px;font-weight:750;color:#25324a;margin:0 0 4px}
+app-table-manager-feature .panel-heading p{font-size:9px;color:#8792a5;margin:0;line-height:1.45}
+app-table-manager-feature .counter{margin-left:auto;font-size:8px;letter-spacing:.65px;font-weight:800;color:#77839a;background:#fafbfe;border:1px solid #e4e8f0;border-radius:5px;padding:6px 8px;white-space:nowrap}
+app-table-manager-feature .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid #edf0f5}
+app-table-manager-feature .toolbar-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+app-table-manager-feature .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:33px;padding:8px 11px;border:1px solid #d5dce7;border-radius:7px;background:#fff;color:#3c4963;font-size:10px;font-weight:650;white-space:nowrap;transition:background .12s,border-color .12s}
+app-table-manager-feature .btn:hover:not(:disabled){border-color:#a8b9dd;background:#f7f9ff}
+app-table-manager-feature .btn:disabled{opacity:.44;cursor:not-allowed}
+app-table-manager-feature .btn-primary{background:#174bd1;border-color:#174bd1;color:#fff;box-shadow:0 2px 5px #174bd120}
+app-table-manager-feature .btn-primary:hover:not(:disabled){background:#113bb2;border-color:#113bb2;color:#fff}
+app-table-manager-feature .btn-primary b{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 4px;border-radius:10px;background:#fff;color:#174bd1;font-size:9px}
+app-table-manager-feature .btn-danger-ghost{border-color:#edcbd0;background:#fff;color:#af3445}
+app-table-manager-feature .btn-danger-ghost:hover:not(:disabled){border-color:#d99aa3;background:#fff5f5;color:#992334}
+app-table-manager-feature .btn-small{min-height:27px;font-size:9px;padding:5px 9px}
+app-table-manager-feature .grid-shell{width:100%;min-width:0}
+app-table-manager-feature .schema-grid{height:295px}
+app-table-manager-feature .data-grid{height:380px}
+app-table-manager-feature .create-grid{height:210px}
+app-table-manager-feature .ag-root-wrapper{border:0!important;border-radius:0!important}
+app-table-manager-feature .ag-theme-quartz{--ag-font-family:Inter,Arial,sans-serif;--ag-font-size:10px;--ag-border-color:#e8ecf3;--ag-header-background-color:#f8faff;--ag-header-foreground-color:#758096;--ag-foreground-color:#36435a;--ag-row-hover-color:#f4f7ff;--ag-selected-row-background-color:#eaf0ff;--ag-accent-color:#2457d6}
+app-table-manager-feature .grid-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 16px;border-top:1px solid #edf0f5;color:#8d98ab;font-size:9px;line-height:1.5}
+app-table-manager-feature .blue-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#6487e8;margin-right:7px;vertical-align:middle}
+app-table-manager-feature .saving-label{color:#2555c0;font-weight:650;white-space:nowrap}
+app-table-manager-feature .dropped-section{padding:12px 16px 14px;border-top:1px solid #f2e0e1;background:#fffafa}
+app-table-manager-feature .dropped-label{font-size:8px;font-weight:800;letter-spacing:.8px;color:#a64f57;margin-bottom:7px}
+app-table-manager-feature .dropped-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0}
+app-table-manager-feature .dropped-row>div{display:flex;align-items:center;gap:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#8f535a}
+app-table-manager-feature .dropped-row span{font-family:Inter,Arial,sans-serif;font-size:9px;color:#ae888c}
+app-table-manager-feature .data-toolbar{background:#fff}
+app-table-manager-feature .search-input{width:min(270px,40%);height:33px;border:1px solid #d5dce7;border-radius:6px;padding:0 10px;font-size:10px;color:#2a3853;outline:none}
+app-table-manager-feature .search-input:focus{border-color:#3467d9;box-shadow:0 0 0 3px #2457d51a}
+app-table-manager-feature .sql-panel .panel-heading>.btn{margin-left:auto}
+app-table-manager-feature .sql-code{margin:13px 14px 15px;background:#0b1228;color:#c9d3ff;padding:15px 17px;border-radius:7px;min-height:68px;overflow:auto;white-space:pre-wrap;font:10px/1.75 'IBM Plex Mono',monospace}
+app-table-manager-feature .sql-subheading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 14px;padding:8px 2px 0;border-top:1px solid #edf0f5;color:#4d5a72;font-size:10px}
+app-table-manager-feature .sql-muted{color:#c7e1ff}
+app-table-manager-feature .stepper{display:flex;align-items:center;gap:12px;margin:23px 4px 25px;max-width:850px}
+app-table-manager-feature .step{display:flex;align-items:center;gap:8px;color:#8792a5;white-space:nowrap;font-size:10px}
+app-table-manager-feature .step i{display:grid;place-items:center;width:24px;height:24px;border:1px solid #d3dae6;border-radius:50%;background:#fff;color:#78849a;font-style:normal;font-weight:750}
+app-table-manager-feature .step.current{color:#174bd1}
+app-table-manager-feature .step.current i{background:#174bd1;border-color:#174bd1;color:#fff}
+app-table-manager-feature .step.done{color:#148563}
+app-table-manager-feature .step.done i{background:#188f6a;border-color:#188f6a;color:#fff}
+app-table-manager-feature .stepper hr{height:1px;flex:1;min-width:20px;border:0;background:#d7deea}
+app-table-manager-feature .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 15px;padding:22px 18px}
+app-table-manager-feature .form-grid label, app-table-manager-feature .column-form label{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:10px;font-weight:650;color:#4d5a72}
+app-table-manager-feature .form-grid input, app-table-manager-feature .form-grid select, app-table-manager-feature .column-form input:not([type=checkbox]), app-table-manager-feature .column-form select{height:35px;min-width:0;width:100%;border:1px solid #cfd6e2;border-radius:6px;padding:0 10px;background:#fff;color:#24314b;outline:none}
+app-table-manager-feature .form-grid input:focus, app-table-manager-feature .form-grid select:focus, app-table-manager-feature .column-form input:focus, app-table-manager-feature .column-form select:focus{border-color:#3467d9;box-shadow:0 0 0 3px #2457d51a}
+app-table-manager-feature .panel-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid #edf0f5}
+app-table-manager-feature .footer-split{justify-content:space-between}
+app-table-manager-feature .add-form{margin:14px;padding:14px;background:#fafbfe;border:1px solid #e4e9f2;border-radius:8px}
+app-table-manager-feature .add-form h3{font-size:10px;color:#42506a;margin:0 0 13px}
+app-table-manager-feature .column-form{display:grid;grid-template-columns:1.25fr 1fr .8fr .6fr 1fr auto auto auto auto;align-items:end;gap:9px}
+app-table-manager-feature .column-form label{font-size:9px;gap:6px}
+app-table-manager-feature .column-form input:not([type=checkbox]), app-table-manager-feature .column-form select{height:32px;font-size:10px;padding:0 7px}
+app-table-manager-feature .column-form .check-control{display:flex;flex-direction:row;align-items:center;gap:5px;white-space:nowrap;padding-bottom:9px;font-weight:500}
+app-table-manager-feature .check-control input, app-table-manager-feature .pk-list input, app-table-manager-feature .modal-checks input{accent-color:#174bd1}
+app-table-manager-feature .draft-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+app-table-manager-feature .draft-item{display:flex;align-items:center;gap:9px;background:#edf3ff;color:#3157a5;border-radius:6px;padding:6px 8px;font-size:9px}
+app-table-manager-feature .draft-item span{display:flex;align-items:center;gap:7px}
+app-table-manager-feature .draft-item small{color:#6a80b7}
+app-table-manager-feature .draft-item button{border:0;background:transparent;color:#3157a5;font-size:15px}
+app-table-manager-feature .pk-list{padding:12px 18px;border-bottom:1px solid #edf0f5}
+app-table-manager-feature .pk-list label{display:flex;align-items:center;gap:10px;font-size:11px}
+app-table-manager-feature .pk-list span{margin-left:auto;color:#7d899e;font-size:10px}
+app-table-manager-feature .pk-list em{font-style:normal;font-size:8px;font-weight:750;letter-spacing:.2px;color:#188363;background:#e7f7f0;padding:5px 6px;border-radius:4px}
+app-table-manager-feature .footer{display:flex;justify-content:space-between;gap:12px;color:#9ba5b5;font-size:9px;padding:10px 2px 0}
+app-table-manager-feature .toast{position:fixed;right:22px;bottom:22px;z-index:70;display:flex;align-items:center;gap:10px;max-width:min(500px,calc(100vw - 30px));padding:12px 16px;border-radius:8px;background:#0d7958;color:#fff;font-size:11px;line-height:1.45;box-shadow:0 10px 28px #0c17393d}
+app-table-manager-feature .toast b{display:grid;place-items:center;flex-shrink:0;width:20px;height:20px;border:1px solid #ffffff70;border-radius:50%}
+app-table-manager-feature .toast.error{background:#a52c40}
+app-table-manager-feature .modal-backdrop{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:#071027b8;padding:20px}
+app-table-manager-feature .dialog{width:min(600px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:12px;box-shadow:0 24px 70px #0005}
+app-table-manager-feature .dialog-header{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding:20px 21px;border-bottom:1px solid #edf0f5}
+app-table-manager-feature .dialog-header h2{font-size:18px;color:#1b2741;margin:0 0 5px}
+app-table-manager-feature .dialog-header p{font-size:10px;color:#8691a4;margin:0}
+app-table-manager-feature .close-button{display:grid;place-items:center;width:29px;height:29px;border:0;border-radius:6px;background:#f0f3f8;color:#69758b;font-size:20px}
+app-table-manager-feature .modal-form{padding:21px}
+app-table-manager-feature .modal-form em{font-size:8px;color:#b13c4a;font-style:normal;font-weight:500}
+app-table-manager-feature .modal-checks{display:flex;align-items:center;flex-wrap:wrap;gap:14px;grid-column:1/-1}
+app-table-manager-feature .modal-checks label{display:flex;flex-direction:row;align-items:center;gap:5px}
+app-table-manager-feature .row-modal-form{max-height:55vh;overflow:auto}
+@media(max-width:1200px){
+app-table-manager-feature .content{padding:24px 20px}
+app-table-manager-feature .metric-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+app-table-manager-feature .column-form{grid-template-columns:repeat(3,minmax(100px,1fr))}
+}
+@media(max-width:850px){
+app-table-manager-feature .topbar{padding:0 14px;gap:10px}
+app-table-manager-feature .brand-copy strong{font-size:12px}
+app-table-manager-feature .failure-toggle span{max-width:100px;white-space:normal}
+app-table-manager-feature .view-tabs{padding:0 12px}
+app-table-manager-feature .content{padding:21px 13px}
+app-table-manager-feature .page-heading{flex-direction:column}
+app-table-manager-feature .table-picker{width:100%}
+app-table-manager-feature .toolbar{align-items:flex-start;flex-direction:column}
+app-table-manager-feature .search-input{width:100%;max-width:none}
+app-table-manager-feature .stepper{gap:5px}
+app-table-manager-feature .step{gap:4px;font-size:8px}
+app-table-manager-feature .step i{width:20px;height:20px}
+app-table-manager-feature .stepper hr{min-width:8px}
+app-table-manager-feature .environment-note{display:none}
+}
+@media(max-width:560px){
+app-table-manager-feature .brand-mark{font-size:23px;padding-right:10px}
+app-table-manager-feature .brand-copy small{display:none}
+app-table-manager-feature .failure-toggle{font-size:8px}
+app-table-manager-feature .demo-pill{display:none}
+app-table-manager-feature .topbar>.btn{font-size:9px;padding:7px}
+app-table-manager-feature .view-tabs>button{padding:0 10px;font-size:10px}
+app-table-manager-feature .metric-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+app-table-manager-feature .metric-card{padding:11px;gap:8px}
+app-table-manager-feature .metric-icon{width:28px;height:28px;font-size:13px}
+app-table-manager-feature .metric-card span{font-size:7px;letter-spacing:.3px}
+app-table-manager-feature .metric-card strong{font-size:18px}
+app-table-manager-feature .metric-card .metric-string{font-size:11px}
+app-table-manager-feature .form-grid{grid-template-columns:1fr}
+app-table-manager-feature .column-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+app-table-manager-feature .footer{flex-direction:column}
+app-table-manager-feature .sql-panel .panel-heading>.btn{font-size:8px;padding:5px}
+app-table-manager-feature .grid-foot{align-items:flex-start;flex-direction:column}
+}
+
+
+/* AG Grid needs a sized host element; the panel wrappers alone do not size the grid component. */
+app-table-manager-feature .grid-shell > ag-grid-angular{
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
