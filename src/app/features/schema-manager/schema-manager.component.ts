@@ -36,7 +36,7 @@ const blankColumn = (id: number): ColumnDefinition => ({
   standalone: true,
   imports: [CommonModule, FormsModule, AgGridAngular],
   templateUrl: './schema-manager.component.html',
-  styleUrls: ['./schema-manager.component.css']
+  styleUrls: ['./schema-manager.component.scss']
 })
 export class SchemaManagerComponent implements OnInit {
   constructor(private readonly mockDb: MockDatabaseService) {}
