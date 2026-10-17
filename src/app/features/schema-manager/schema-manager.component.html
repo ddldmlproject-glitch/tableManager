@@ -61,7 +61,7 @@
           </div>
         </div>
         <div class="grid-shell schema-grid">
-          <ag-grid-angular
+          <ag-grid-angular class="schema-manager-grid"
             [theme]="gridTheme"
             [rowData]="liveColumns"
             [columnDefs]="schemaColDefs"
@@ -96,7 +96,7 @@
           <input class="search-input" [ngModel]="searchText" (ngModelChange)="updateSearch($event)" placeholder="⌕  Search records…" aria-label="Search table data">
         </div>
         <div class="grid-shell data-grid">
-          <ag-grid-angular
+          <ag-grid-angular class="schema-manager-grid"
             [theme]="gridTheme"
             [rowData]="rows"
             [columnDefs]="dataColDefs"
@@ -150,7 +150,7 @@
       <section class="panel" *ngIf="createStep === 2">
         <div class="panel-heading"><div class="heading-icon">▦</div><div class="panel-heading-copy"><h2>Step 2 — Columns & constraints</h2><p>Add Oracle data types, length/precision, defaults and constraints.</p></div><span class="counter">{{ createColumns.length }} COLUMNS</span></div>
         <div class="grid-shell create-grid">
-          <ag-grid-angular [theme]="gridTheme" [rowData]="createColumns" [columnDefs]="schemaColDefs" [defaultColDef]="schemaDefaultColDef"></ag-grid-angular>
+          <ag-grid-angular class="schema-manager-grid" [theme]="gridTheme" [rowData]="createColumns" [columnDefs]="schemaColDefs" [defaultColDef]="schemaDefaultColDef"></ag-grid-angular>
         </div>
         <div class="add-form">
           <h3>＋ Add column definition</h3>
