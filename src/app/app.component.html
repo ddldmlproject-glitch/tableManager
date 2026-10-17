@@ -30,8 +30,8 @@
         </div>
         <div class="table-picker">
           <label for="table-select">Selected table</label>
-          <select id="table-select" [ngModel]="selectedTableName" (ngModelChange)="selectTable($event)">
-            <option *ngFor="let item of tables" [value]="item.name">{{ item.schema }}.{{ item.name }}</option>
+          <select id="table-select" [ngModel]="selectedTableKey" (ngModelChange)="selectTableKey($event)">
+            <option *ngFor="let item of tables" [value]="item.schema + '.' + item.name">{{ item.schema }}.{{ item.name }}</option>
           </select>
         </div>
       </section>
