@@ -60,3 +60,11 @@ See docs/BACKEND-INTEGRATION.md. The proposed endpoints are placeholders to agre
 - The API failure toggle simulates rollback behavior; it is not a real HTTP request.
 - Generated DDL is preview only.
 - Never connect the browser directly to Oracle or execute arbitrary SQL strings from the frontend. The backend must authorize operations, validate identifiers/constraints, generate DDL from structured schema metadata, bind DML values, and audit destructive operations.
+
+## Citi MFE / API-backed mode
+
+- The reusable standalone feature selector is <app-table-manager-feature>; integration steps are in docs/CITI-MFE-INTEGRATION.md.
+- The DML grid uses AG Grid Community's Infinite Row Model: 20 rows per block and at most 5 cached blocks. Sorting, filter models and search are supplied to the data source.
+- DatabaseApiService uses GET for reads and POST command bodies for create/update/delete. The paths and response envelopes are adapter examples and must be mapped to the actual Citi endpoints before live mode is enabled.
+- Set useMockData: false only after connecting the real API contract. Paged GET responses should include items, totalCount, and readVersion; successful mutation responses should include an authoritative row and commitVersion so optimistic values can coexist safely with delayed Elasticsearch results.
+- Production integration requirements and error/rollback behavior are documented in docs/BACKEND-INTEGRATION.md.
