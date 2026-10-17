@@ -33,7 +33,7 @@ Copy the screen and its dependencies into the generated library while preserving
 
 - `src/app/app.component.ts`
 - `src/app/app.component.html`
-- `src/app/app.component.css`
+- `src/app/app.component.scss`
 - `src/app/models/database.models.ts`
 - `src/app/services/` (the API adapter, infinite datasource, optimistic mutation helper, and existing mock service)
 
@@ -70,7 +70,7 @@ Use the actual alias configured in your Citi workspace. If the application uses 
 
 - Keep Citi's existing auth and HTTP interceptors, correlation IDs, error telemetry, and environment configuration.
 - Provide `HttpClient` through the host's existing provider setup; do not add a second auth stack.
-- The feature CSS is in `app.component.css` so most selectors are component-scoped. Retain this scoping when moving it into the library. Avoid importing the demo's old global stylesheet into the entire Citi shell.
+- The feature SCSS is in `schema-manager.component.scss` so most selectors are component-scoped. Retain this scoping when moving it into the library. Avoid importing the demo's old global stylesheet into the entire Citi shell.
 - Reapply the required Citi IGDS tokens/components in the host library where your design system standards require them. Do not introduce duplicate global resets or another theme.
 
 ### 5. Map the real Citi GET/POST contracts
