@@ -33,10 +33,11 @@ const blankColumn = (id: number): ColumnDefinition => ({
 });
 
 @Component({
-  selector: 'app-root',
+  selector: 'app-oracle-schema-manager',
   standalone: true,
   imports: [CommonModule, FormsModule, AgGridAngular],
-  templateUrl: './app.component.html'
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
   constructor(private readonly mockDb: MockDatabaseService) {}
