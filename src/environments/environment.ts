@@ -2,12 +2,10 @@ export const environment = {
   production: false,
 
   /**
-   * Keep mock mode enabled for the standalone demo.
-   * In Citi MFE, set useMockData=false and replace the example paths below
-   * with the approved backend contract for that environment.
+   * These paths are examples only. Map them to the approved Citi API
+   * contract before using the HTTP adapter from the MFE.
    */
   databaseApi: {
-    useMockData: true,
     baseUrl: '/api',
     blockSize: 20,
     maxCachedBlocks: 8,
