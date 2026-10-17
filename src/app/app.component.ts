@@ -36,7 +36,7 @@ const blankColumn = (id: number): ColumnDefinition => ({
   standalone: true,
   imports: [CommonModule, FormsModule, AgGridAngular],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
   constructor(private readonly mockDb: MockDatabaseService) {}
