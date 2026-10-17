@@ -946,7 +946,7 @@ export class AppComponent implements OnInit {
       this.createStep = 1;
       return;
     }
-    if (this.mockDb.tables.some(table => table.name === name && table.schema === this.createMeta.schema)) {
+    if (this.tables.some(table => table.name === name && table.schema === this.createMeta.schema)) {
       this.notify('A table with this name already exists.', true);
       return;
     }
@@ -959,9 +959,14 @@ export class AppComponent implements OnInit {
       this.notify('Select a primary-key column.', true);
       return;
     }
-    if (!confirm('Create ' + this.createMeta.schema + '.' + name + ' in local sample data? No Oracle database is connected.')) return;
+    if (!confirm(this.useMockData
+      ? 'Create ' + this.createMeta.schema + '.' + name + ' in local sample data? No Oracle database is connected.'
+      : 'Create ' + this.createMeta.schema + '.' + name + ' through the database API?')) return;
 
     const previousTableName = this.selectedTableName;
+    const previousLiveTable = !this.useMockData && this.activeLiveTable
+      ? this.cloneTable(this.activeLiveTable)
+      : null;
     const newTable: TableSchema = {
       ...this.createMeta,
       name,
@@ -972,23 +977,42 @@ export class AppComponent implements OnInit {
       })),
       rows: []
     };
-    this.mockDb.tables.push(newTable);
+
+    if (this.useMockData) {
+      this.mockDb.tables.push(newTable);
+    } else {
+      this.liveTableCatalog = [...this.liveTableCatalog, newTable];
+      this.activeLiveTable = newTable;
+    }
     this.selectedTableName = name;
     this.page = 'workspace';
     this.refreshDataColumns();
     this.refreshVisibleRows();
+    this.totalRowCount = 0;
+    this.resetInfiniteDataSource();
+    const { rows: _rows, ...definition } = newTable;
+
     this.persistOptimistically(
       () => {
-        const index = this.mockDb.tables.findIndex(table => table.name === name && table.schema === newTable.schema);
-        if (index >= 0) this.mockDb.tables.splice(index, 1);
+        if (this.useMockData) {
+          const index = this.mockDb.tables.findIndex(table => table.name === name && table.schema === newTable.schema);
+          if (index >= 0) this.mockDb.tables.splice(index, 1);
+        } else {
+          this.liveTableCatalog = this.liveTableCatalog.filter(table => !(table.name === name && table.schema === newTable.schema));
+          this.activeLiveTable = previousLiveTable;
+        }
         this.selectedTableName = previousTableName;
         this.page = 'create';
         this.refreshDataColumns();
         this.refreshVisibleRows();
+        this.resetInfiniteDataSource();
       },
-      'Table created in local sample data. The data grid is ready for row inserts.',
+      this.useMockData
+        ? 'Table created in local sample data. The data grid is ready for row inserts.'
+        : 'Table created. The data grid is ready for row inserts.',
       'Create failed. The table was removed and the previous selection restored.',
-      () => this.takeSchemaSnapshot()
+      () => this.takeSchemaSnapshot(),
+      this.useMockData ? undefined : () => this.databaseApi.createTable(definition)
     );
   }
 
