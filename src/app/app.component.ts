@@ -520,6 +520,12 @@ export class AppComponent implements OnInit {
 
     const column = this.liveColumns.find(item => item.name === field);
     let nextValue: string | number | boolean | null = event.newValue ?? null;
+    if (!this.useMockData && !this.liveColumns.some(item => item.primaryKey)) {
+      row[field] = event.oldValue;
+      event.api.refreshCells({ force: true });
+      this.notify('Inline updates require a stable primary key. Contact the API team if this table has no key.', true);
+      return;
+    }
 
     // Changing a row identifier requires a dedicated, audited operation.
     if (column?.primaryKey) {
@@ -639,7 +645,6 @@ export class AppComponent implements OnInit {
     const failed = (error?: unknown): void => {
       this.isSaving = false;
       rollback();
-      this.refreshInfiniteRows();
       this.notify(error ? this.apiErrorMessage(failureMessage, error) : failureMessage, true);
     };
 
@@ -649,7 +654,6 @@ export class AppComponent implements OnInit {
         this.isSaving = false;
         if (shouldFail) {
           rollback();
-          this.refreshInfiniteRows();
           this.notify(failureMessage, true);
           return;
         }
