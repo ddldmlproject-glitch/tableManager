@@ -1045,6 +1045,9 @@ export class AppComponent implements OnInit {
 
   saveRow(): void {
     if (this.isSaving) return;
+    const operation = this.modalMode === 'insert' ? 'insert' : 'update';
+    const selectedBefore = this.selectedRow ? { ...this.selectedRow } : null;
+
     for (const column of this.liveColumns) {
       const value = this.rowDraft[column.name];
       if (!column.nullable && (value === null || value === undefined || value === '')) {
@@ -1055,7 +1058,9 @@ export class AppComponent implements OnInit {
         this.notify(column.name + ' must be numeric.', true);
         return;
       }
-      if ((column.unique || column.primaryKey) && value !== null && value !== undefined && value !== '') {
+      // Local data can be fully checked in the demo. In live mode, the server must
+      // enforce uniqueness against the entire dataset (the browser only has a few blocks).
+      if (this.useMockData && (column.unique || column.primaryKey) && value !== null && value !== undefined && value !== '') {
         const comparableValue = column.dataType === 'NUMBER' ? Number(value) : value;
         const duplicate = this.table.rows.some(row => row !== this.selectedRow && row[column.name] === comparableValue);
         if (duplicate) {
@@ -1065,19 +1070,16 @@ export class AppComponent implements OnInit {
       }
     }
 
-    if (this.modalMode === 'insert') {
-      const primaryKey = this.liveColumns.find(column => column.primaryKey);
-      if (primaryKey) {
-        const value = this.rowDraft[primaryKey.name];
-        const comparableValue = primaryKey.dataType === 'NUMBER' && value !== '' && value !== null ? Number(value) : value;
-        if (this.table.rows.some(row => row[primaryKey.name] === comparableValue)) {
-          this.notify(primaryKey.name + ' already exists. Choose a unique primary-key value.', true);
-          return;
-        }
-      }
+    const primaryKey = this.liveColumns.find(column => column.primaryKey);
+    if (operation === 'update' && !this.selectedRow) {
+      this.notify('Select a row in the data grid first.', true);
+      return;
+    }
+    if (!this.useMockData && !primaryKey) {
+      this.notify('This table has no declared primary key. The API must provide a stable row key before CRUD is enabled.', true);
+      return;
     }
 
-    const before = this.cloneTable(this.table);
     const draft: TableRow = {};
     this.liveColumns.forEach(column => {
       const value = this.rowDraft[column.name];
@@ -1086,24 +1088,90 @@ export class AppComponent implements OnInit {
         value as string | number | boolean | null;
     });
 
-    if (this.modalMode === 'insert') {
-      this.table.rows = [...this.table.rows, draft];
-    } else if (this.selectedRow) {
-      const index = this.table.rows.indexOf(this.selectedRow);
-      if (index < 0) {
-        this.notify('The selected row no longer exists. Refresh the table and try again.', true);
+    if (operation === 'update' && primaryKey && selectedBefore &&
+        draft[primaryKey.name] !== selectedBefore[primaryKey.name]) {
+      this.notify('Primary-key values cannot be changed in the row editor.', true);
+      return;
+    }
+
+    if (operation === 'insert' && primaryKey && this.useMockData) {
+      const value = draft[primaryKey.name];
+      const comparableValue = primaryKey.dataType === 'NUMBER' && value !== '' && value !== null ? Number(value) : value;
+      if (this.table.rows.some(row => row[primaryKey.name] === comparableValue)) {
+        this.notify(primaryKey.name + ' already exists. Choose a unique primary-key value.', true);
         return;
       }
-      this.table.rows = this.table.rows.map((row, rowIndex) => rowIndex === index ? draft : row);
     }
-    this.refreshVisibleRows();
+
+    const selectedTable = this.table;
+    const before = this.cloneTable(selectedTable);
+    let overlayKey: string | undefined;
+
+    if (operation === 'insert') {
+      if (this.useMockData) {
+        selectedTable.rows = [...selectedTable.rows, draft];
+      } else {
+        overlayKey = this.setRemoteCreatedRow(draft);
+        if (this.activeLiveTable) this.activeLiveTable.rows = [draft, ...this.activeLiveTable.rows].slice(0, this.cacheBlockSize);
+      }
+    } else if (this.selectedRow) {
+      const original = selectedBefore ?? { ...this.selectedRow };
+      overlayKey = this.rowIdentity(original);
+      if (this.useMockData) {
+        const index = selectedTable.rows.findIndex(row => row === this.selectedRow);
+        if (index < 0) {
+          this.notify('The selected row is no longer in the local data. Refresh and try again.', true);
+          return;
+        }
+        selectedTable.rows = selectedTable.rows.map((row, rowIndex) => rowIndex === index ? draft : row);
+      } else {
+        Object.assign(this.selectedRow, draft);
+        this.rowOverrides.set(overlayKey, { row: { ...draft } });
+        if (this.activeLiveTable) {
+          this.activeLiveTable.rows = this.activeLiveTable.rows.map(row =>
+            this.rowIdentity(row) === overlayKey ? draft : row
+          );
+        }
+      }
+    }
 
     this.modal = '';
     this.selectedRow = draft;
+    this.refreshVisibleRows();
+    this.refreshInfiniteRows();
+
+    const rollback = (): void => {
+      if (overlayKey) {
+        this.rowOverrides.delete(overlayKey);
+        this.createdRows.delete(overlayKey);
+      }
+      this.restoreTableSnapshot(before);
+    };
+
+    let remoteRequest: (() => Observable<unknown>) | undefined;
+    if (!this.useMockData && primaryKey) {
+      if (operation === 'insert') {
+        remoteRequest = () => this.databaseApi.createRow(selectedTable.schema, selectedTable.name, draft);
+      } else if (selectedBefore) {
+        const changes: Partial<TableRow> = { ...draft };
+        delete changes[primaryKey.name];
+        remoteRequest = () => this.databaseApi.updateRow(selectedTable.schema, selectedTable.name, {
+          column: primaryKey.name,
+          value: selectedBefore[primaryKey.name] ?? null
+        }, changes);
+      }
+    }
+
     this.persistOptimistically(
-      () => this.restoreTableSnapshot(before),
-      this.modalMode === 'insert' ? 'Row inserted into local sample data.' : 'Row updated in local sample data.',
-      'Save failed. The previous row data was restored.'
+      rollback,
+      operation === 'insert' ? 'Row created.' : 'Row updated.',
+      'Save failed. The previous row data was restored.',
+      result => {
+        if (overlayKey && !this.useMockData) {
+          this.rememberRemoteWriteOverlay(overlayKey, result, draft);
+        }
+      },
+      remoteRequest
     );
   }
 
@@ -1113,16 +1181,44 @@ export class AppComponent implements OnInit {
       this.notify('Select a row in the data grid first.', true);
       return;
     }
-    if (!confirm('Delete the selected row from local sample data?')) return;
-    const before = this.cloneTable(this.table);
-    const selected = this.selectedRow;
-    this.table.rows = this.table.rows.filter(row => row !== selected);
+    const selected = { ...this.selectedRow };
+    const primaryKey = this.liveColumns.find(column => column.primaryKey);
+    if (!this.useMockData && !primaryKey) {
+      this.notify('This table has no declared primary key. The API must provide a stable row key before delete is enabled.', true);
+      return;
+    }
+    if (!confirm(this.useMockData
+      ? 'Delete the selected row from local sample data?'
+      : 'Delete the selected row from ' + this.table.schema + '.' + this.table.name + '?')) return;
+
+    const selectedTable = this.table;
+    const before = this.cloneTable(selectedTable);
+    const overlayKey = this.rowIdentity(selected);
+    selectedTable.rows = selectedTable.rows.filter(row => this.rowIdentity(row) !== overlayKey);
+    if (!this.useMockData) this.deletedRows.set(overlayKey, {});
     this.refreshVisibleRows();
     this.selectedRow = null;
+    this.refreshInfiniteRows();
+
+    const rollback = (): void => {
+      this.deletedRows.delete(overlayKey);
+      this.restoreTableSnapshot(before);
+    };
+    const remoteRequest = !this.useMockData && primaryKey
+      ? () => this.databaseApi.deleteRow(selectedTable.schema, selectedTable.name, {
+          column: primaryKey.name,
+          value: selected[primaryKey.name] ?? null
+        })
+      : undefined;
+
     this.persistOptimistically(
-      () => this.restoreTableSnapshot(before),
-      'Row deleted from local sample data.',
-      'Delete failed. The previous row data was restored.'
+      rollback,
+      'Row deleted.',
+      'Delete failed. The previous row data was restored.',
+      result => {
+        if (!this.useMockData) this.rememberRemoteWriteOverlay(overlayKey, result);
+      },
+      remoteRequest
     );
   }
 
