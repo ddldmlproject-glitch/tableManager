@@ -7,6 +7,7 @@ import {
   CellValueChangedEvent,
   ColDef,
   GridApi,
+  GetRowIdParams,
   GridReadyEvent,
   IDatasource,
   IGetRowsParams,
@@ -365,6 +366,42 @@ export class AppComponent implements OnInit {
     return [this.table.schema, this.table.name, primaryKey?.name ?? '_row', String(value ?? '')].join(':');
   }
 
+  readonly getDataRowId = (params: GetRowIdParams<TableRow>): string => this.rowIdentity(params.data);
+
+  private rememberRemoteWriteOverlay(key: string, response: unknown, row?: TableRow): void {
+    const result = (response ?? {}) as RowCrudResponse;
+    const overlayRow = result.row ?? row;
+    if (overlayRow) this.rowOverrides.set(key, { row: { ...overlayRow }, commitVersion: result.commitVersion });
+    const created = this.createdRows.get(key);
+    if (created) this.createdRows.set(key, { ...created, row: { ...overlayRow ?? created.row }, commitVersion: result.commitVersion });
+    const deleted = this.deletedRows.get(key);
+    if (deleted) this.deletedRows.set(key, { commitVersion: result.commitVersion });
+  }
+
+  private setRemoteCreatedRow(row: TableRow): string {
+    const key = this.rowIdentity(row);
+    this.createdRows.set(key, { row: { ...row } });
+    this.deletedRows.delete(key);
+    return key;
+  }
+
+  private apiRequestForUpdate(row: TableRow, changes: Partial<TableRow>): (() => Observable<unknown>) | undefined {
+    if (this.useMockData) return undefined;
+    const primaryKey = this.liveColumns.find(column => column.primaryKey);
+    if (!primaryKey) return undefined;
+    return () => this.databaseApi.updateRow(this.table.schema, this.table.name, {
+      column: primaryKey.name,
+      value: row[primaryKey.name] ?? null
+    }, changes);
+  }
+
+  private refreshInfiniteRows(): void {
+    if (this.useMockData) {
+      this.totalRowCount = this.table.rows.length;
+    }
+    this.resetInfiniteDataSource();
+  }
+
   private applyRemoteRowOverlays(page: TablePageResponse, startRow: number, endRow: number): TablePageResponse {
     const readVersion = page.readVersion;
     if (readVersion !== undefined) {
@@ -446,6 +483,14 @@ export class AppComponent implements OnInit {
     const column = this.liveColumns.find(item => item.name === field);
     let nextValue: string | number | boolean | null = event.newValue ?? null;
 
+    // Changing a row identifier requires a dedicated, audited operation.
+    if (column?.primaryKey) {
+      row[field] = event.oldValue;
+      event.api.refreshCells({ force: true });
+      this.notify('Primary-key cells cannot be edited inline.', true);
+      return;
+    }
+
     if (column && !column.nullable && (nextValue === null || nextValue === '')) {
       row[field] = event.oldValue;
       event.api.refreshCells({ force: true });
@@ -470,18 +515,33 @@ export class AppComponent implements OnInit {
         this.table.rows.some(other => other !== row && other[field] === nextValue)) {
       row[field] = event.oldValue;
       event.api.refreshCells({ force: true });
-      this.notify(field + ' must be unique.', true);
+      this.notify(field + ' must be unique in the loaded rows; the API enforces uniqueness across the table.', true);
       return;
     }
 
     const previousValue = event.oldValue;
+    const overlayKey = this.rowIdentity(row);
+    if (!this.useMockData) this.rowOverrides.set(overlayKey, { row: { ...row } });
+
     this.persistOptimistically(
       () => {
+        this.rowOverrides.delete(overlayKey);
         row[field] = previousValue ?? null;
         event.api.refreshCells({ force: true });
+        this.refreshInfiniteRows();
       },
-      'Cell update saved to local sample data.',
-      'The save failed. The cell has been restored to its previous value.'
+      'Cell update saved.',
+      'The save failed. The cell has been restored to its previous value.',
+      result => {
+        const response = (result ?? {}) as RowCrudResponse;
+        const authoritative = response.row ?? row;
+        if (response.row) Object.assign(row, response.row);
+        if (!this.useMockData) {
+          this.rowOverrides.set(overlayKey, { row: { ...authoritative }, commitVersion: response.commitVersion });
+          event.api.refreshCells({ force: true });
+        }
+      },
+      this.apiRequestForUpdate(row, { [field]: nextValue })
     );
   }
 
