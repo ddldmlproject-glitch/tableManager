@@ -73,3 +73,10 @@ Integration primitives added:
 - `OptimisticMutationService`: applies local changes immediately and restores the caller's captured previous state when a request fails.
 
 **Important:** the standalone demo still defaults to mock data to avoid breaking local development. The HTTP adapter is not automatically substituted into the mock-backed demo component because the private Citi API endpoint and DTO contracts were not provided. Wire the API repository into the Citi feature using the integration guide; do not point it at Elasticsearch and immediately refetch after every write, since its index is eventually consistent.
+
+
+## Copy into an existing Citi MFE (recommended shortcut)
+
+A copy-ready feature folder is now available at [`src/app/features/schema-manager/`](src/app/features/schema-manager/README.md). Copy that entire directory (including `models/` and `services/`) into your Citi MFE, import `SchemaManagerModule` in the existing feature module, then add `<app-schema-manager></app-schema-manager>` to the host page template. The feature owns its standalone Angular imports and scoped CSS; do not copy the demo's root bootstrap or global stylesheet.
+
+See [the folder's README](src/app/features/schema-manager/README.md) for exact imports, dependency checks, API config examples, and the distinction between the current mock-data screen and the API integration helpers. This additive folder does not change the standalone demo's existing behavior.
