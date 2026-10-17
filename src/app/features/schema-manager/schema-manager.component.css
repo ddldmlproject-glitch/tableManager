@@ -178,18 +178,34 @@ button{cursor:pointer}
   min-width: 0;
 }
 
-/* Match the standalone grid's compact enterprise appearance. Theme colors and
-   spacing are configured with themeQuartz.withParams() in the component. */
+/* Quartz legacy CSS theme overrides, scoped to the schema manager grid. */
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz {
+  --ag-font-family: Inter, Arial, sans-serif;
+  --ag-font-size: 10px;
+  --ag-header-font-size: 9px;
+  --ag-background-color: #ffffff;
+  --ag-foreground-color: #36435a;
+  --ag-header-background-color: #f8faff;
+  --ag-header-foreground-color: #758096;
+  --ag-border-color: #e8ecf3;
+  --ag-accent-color: #2457d6;
+  --ag-row-hover-color: #f4f7ff;
+  --ag-selected-row-background-color: #eaf0ff;
+  --ag-grid-size: 4px;
+  --ag-header-height: 34px;
+  --ag-row-height: 30px;
+  --ag-cell-horizontal-padding: 7px;
+}
 
-:host ::ng-deep .schema-manager-grid .ag-header-cell-label {
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-header-cell-label {
   font-weight: 700;
 }
-:host ::ng-deep .schema-manager-grid .ag-header-cell-text {
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-header-cell-text {
   letter-spacing: .25px;
 }
-:host ::ng-deep .schema-manager-grid .ag-cell {
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-cell {
   border-right: 1px solid #f0f2f6;
 }
-:host ::ng-deep .schema-manager-grid .ag-row {
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-row {
   border-bottom: 1px solid #edf0f5;
 }
