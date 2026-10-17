@@ -10,6 +10,11 @@ html, body {
 
 /* Quartz legacy CSS theme overrides, scoped to the schema manager grid. */
 .schema-manager-grid.ag-theme-quartz {
+  --ag-checkbox-background-color: #ffffff;
+  --ag-checkbox-checked-color: #174bd1;
+  --ag-checkbox-unchecked-color: #40516a;
+  --ag-checkbox-indeterminate-color: #174bd1;
+  --ag-active-color: #174bd1;
   --ag-font-family: Inter, Arial, sans-serif;
   --ag-font-size: 10px;
   --ag-header-font-size: 9px;
@@ -38,4 +43,23 @@ html, body {
 }
 .schema-manager-grid.ag-theme-quartz .ag-row {
   border-bottom: 1px solid #edf0f5;
+}
+
+/* Keep the DML rows comfortably readable; schema metadata stays compact. */
+.data-grid > .schema-manager-grid.ag-theme-quartz {
+  --ag-font-size: 12px;
+  --ag-header-font-size: 11px;
+  --ag-row-height: 34px;
+  --ag-cell-horizontal-padding: 9px;
+}
+
+/* Avoid host styles fading the legacy Quartz checkbox icons. */
+.schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper {
+  opacity: 1 !important;
+}
+.schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper::after {
+  color: var(--ag-checkbox-unchecked-color) !important;
+}
+.schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper.ag-checked::after {
+  color: var(--ag-checkbox-checked-color) !important;
 }
