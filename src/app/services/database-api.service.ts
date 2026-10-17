@@ -60,6 +60,7 @@ export class DatabaseApiService {
       .set('offset', String(request.startRow))
       .set('limit', String(Math.max(0, request.endRow - request.startRow)));
 
+    if (request.searchText?.trim()) params = params.set('q', request.searchText.trim());
     if (request.sortModel?.length) params = params.set('sort', JSON.stringify(request.sortModel));
     if (request.filterModel && Object.keys(request.filterModel).length) {
       params = params.set('filter', JSON.stringify(request.filterModel));
