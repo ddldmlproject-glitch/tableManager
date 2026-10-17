@@ -17,7 +17,7 @@ Copy this entire `schema-manager` directory into the existing Citi Angular MFE, 
 ## Integration steps
 
 ### 1. Copy the folder
-Copy the complete `schema-manager` folder into the MFE, keeping the folder contents intact. You do not need to copy this demo's root `src/styles.css`, `src/index.html`, or root bootstrap file.
+Copy the complete `schema-manager` folder into the MFE, keeping the folder contents intact. You do not need to copy this demo's root `src/styles.scss`, `src/index.html`, or root bootstrap file.
 
 ### 2. Check existing dependencies
 Keep the MFE's approved versions. This component uses Angular Common/Forms and AG Grid Angular/Community. The API helper uses Angular HttpClient and RxJS. The component's own standalone imports declare CommonModule, FormsModule and AgGridAngular, so the host feature module only needs to import SchemaManagerModule.
@@ -52,7 +52,7 @@ Add this selector to the template where the DDL/DML screen should appear:
 Alternatively, import the standalone component in your route configuration and use a `loadComponent` route. Do not bootstrap a second Angular app or replace your MFE's existing router/auth/interceptors.
 
 ### 5. Preserve Citi behavior and theme
-- Do not copy this demo's global `src/styles.css` or `src/index.html`.
+- Do not copy this demo's global `src/styles.scss` or `src/index.html`.
 - Keep the new component's `schema-manager.component.scss` scoped. The component SCSS supports common dark-theme host selectors and uses explicit accessible checkbox colors.
 - Continue using your existing Citi auth, HTTP interceptors, environment handling, telemetry and IGDS tokens/components.
 - Run the existing MFE build and test in a feature branch before merging.
@@ -111,4 +111,4 @@ The standalone project in this repo uses AG Grid 36.2.0. The Citi screenshot sho
 
 ## Checkbox contrast and DML grid text sizing
 
-The feature's legacy Quartz theme explicitly sets checkbox icon/background colors and keeps checkbox icon opacity at 100%, scoped to this feature only. The Table data grid uses a 12px body font, 11px header font and 34px row height; the schema metadata grid stays compact. If the host stylesheet uses stronger global `!important` rules, inspect computed styles for `.ag-checkbox-input-wrapper::after` in DevTools.
+The feature's legacy Quartz theme explicitly sets checkbox icon/background colors and keeps checkbox icon opacity at 100%, scoped to this feature only. The Table data grid uses a 12px body font, 11px header font and 36px row height; the schema metadata grid stays compact. If the host stylesheet uses stronger global `!important` rules, inspect computed styles for `.ag-checkbox-input-wrapper::after` in DevTools.
