@@ -8,8 +8,7 @@ import {
   ColDef,
   ModuleRegistry,
   RowSelectionOptions,
-  SelectionChangedEvent,
-  themeQuartz
+  SelectionChangedEvent
 } from 'ag-grid-community';
 import { ColumnDefinition, OracleDataType, TableRow, TableSchema } from './models/database.models';
 import { MockDatabaseService } from './services/mock-database.service';
@@ -42,27 +41,7 @@ const blankColumn = (id: number): ColumnDefinition => ({
 export class SchemaManagerComponent implements OnInit {
   constructor(private readonly mockDb: MockDatabaseService) {}
 
-  readonly gridTheme = themeQuartz.withParams({
-    // Explicit Quartz tokens make this grid more consistent when embedded in
-    // host MFEs that have their own global typography and AG Grid styles.
-    fontFamily: 'Inter, Arial, sans-serif',
-    fontSize: 10,
-    headerFontSize: 9,
-    headerFontWeight: 700,
-    cellFontSize: 10,
-    backgroundColor: '#ffffff',
-    foregroundColor: '#36435a',
-    headerBackgroundColor: '#f8faff',
-    headerTextColor: '#758096',
-    borderColor: '#e8ecf3',
-    accentColor: '#2457d6',
-    rowHoverColor: '#f4f7ff',
-    selectedRowBackgroundColor: '#eaf0ff',
-    spacing: 4,
-    headerHeight: 34,
-    rowHeight: 30,
-    cellHorizontalPadding: 7
-  });
+  readonly gridTheme = 'legacy' as const;
   readonly rowSelection: RowSelectionOptions = {
     mode: 'singleRow',
     checkboxes: false,
