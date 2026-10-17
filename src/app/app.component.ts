@@ -797,9 +797,12 @@ export class AppComponent implements OnInit {
       this.notify('There are no staged schema changes to apply.', true);
       return;
     }
-    if (!confirm('Apply the staged schema changes to local sample data? No Oracle database is connected.')) return;
+    if (!confirm(this.useMockData
+      ? 'Apply the staged schema changes to local sample data? No Oracle database is connected.'
+      : 'Apply the staged schema changes to ' + this.table.schema + '.' + this.table.name + '?')) return;
 
     const before = this.cloneTable(this.table);
+    const stagedChanges = this.table.columns.filter(column => Boolean(column.status)).map(column => ({ ...column }));
     const droppedNames = this.table.columns.filter(column => column.status === 'dropped').map(column => column.name);
     this.table.columns = this.table.columns
       .filter(column => column.status !== 'dropped')
@@ -808,9 +811,14 @@ export class AppComponent implements OnInit {
     this.refreshDataColumns();
     this.persistOptimistically(
       () => this.restoreTableSnapshot(before),
-      'Schema changes applied to local demo state.',
+      this.useMockData ? 'Schema changes applied to local demo state.' : 'Schema changes applied.',
       'Apply failed. The previous schema and data were restored.',
-      () => this.takeSchemaSnapshot()
+      () => this.takeSchemaSnapshot(),
+      this.useMockData ? undefined : () => this.databaseApi.applySchemaChanges(
+        this.table.schema,
+        this.table.name,
+        stagedChanges
+      )
     );
   }
 
