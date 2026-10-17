@@ -142,6 +142,23 @@ export class AppComponent implements OnInit {
       { name: this.selectedTableName, schema: '', tablespace: '', comment: '', columns: [], rows: [] };
   }
 
+  get selectedTableKey(): string {
+    return this.useMockData
+      ? this.selectedTableName
+      : (this.activeLiveTable?.schema ??
+          this.liveTableCatalog.find(item => item.name === this.selectedTableName)?.schema ??
+          '') + '.' + this.selectedTableName;
+  }
+
+  selectTableKey(key: string): void {
+    if (this.useMockData) {
+      this.selectTable(key);
+      return;
+    }
+    const selected = this.liveTableCatalog.find(item => item.schema + '.' + item.name === key);
+    if (selected) this.selectTable(selected.name, selected.schema);
+  }
+
   private activeColumnsCache: ColumnDefinition[] = [];
 
   get liveColumns(): ColumnDefinition[] {
@@ -207,13 +224,13 @@ export class AppComponent implements OnInit {
           return;
         }
         const first = this.liveTableCatalog.find(item => item.name === this.selectedTableName) ?? this.liveTableCatalog[0];
-        this.selectTable(first.name);
+        this.selectTable(first.name, first.schema);
       },
       error: error => this.notify(this.apiErrorMessage('Unable to load table list', error), true)
     });
   }
 
-  selectTable(name: string): void {
+  selectTable(name: string, schemaName?: string): void {
     this.selectedTableName = name;
     this.page = 'workspace';
     this.selectedColumn = null;
@@ -232,7 +249,7 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    const summary = this.liveTableCatalog.find(item => item.name === name);
+    const summary = this.liveTableCatalog.find(item => item.name === name && (!schemaName || item.schema === schemaName));
     if (!summary) {
       this.notify('The selected table is not available in the API table list.', true);
       return;
@@ -242,7 +259,7 @@ export class AppComponent implements OnInit {
     this.resetInfiniteDataSource();
     this.databaseApi.getTable(summary.schema, summary.name).subscribe({
       next: schema => {
-        if (this.selectedTableName !== name) return;
+        if (this.activeLiveTable?.name !== summary.name || this.activeLiveTable?.schema !== summary.schema) return;
         this.activeLiveTable = { ...schema, rows: [] };
         const catalogIndex = this.liveTableCatalog.findIndex(item => item.schema === schema.schema && item.name === schema.name);
         if (catalogIndex >= 0) this.liveTableCatalog[catalogIndex] = this.activeLiveTable;
@@ -419,15 +436,16 @@ export class AppComponent implements OnInit {
 
   private applyRemoteRowOverlays(page: TablePageResponse, startRow: number, endRow: number): TablePageResponse {
     const readVersion = page.readVersion;
+    const currentPrefix = this.table.schema + ':' + this.table.name + ':';
     if (readVersion !== undefined) {
       for (const [key, overlay] of this.rowOverrides) {
-        if (overlay.commitVersion !== undefined && overlay.commitVersion <= readVersion) this.rowOverrides.delete(key);
+        if (key.startsWith(currentPrefix) && overlay.commitVersion !== undefined && overlay.commitVersion <= readVersion) this.rowOverrides.delete(key);
       }
       for (const [key, overlay] of this.createdRows) {
-        if (overlay.commitVersion !== undefined && overlay.commitVersion <= readVersion) this.createdRows.delete(key);
+        if (key.startsWith(currentPrefix) && overlay.commitVersion !== undefined && overlay.commitVersion <= readVersion) this.createdRows.delete(key);
       }
       for (const [key, overlay] of this.deletedRows) {
-        if (overlay.commitVersion !== undefined && overlay.commitVersion <= readVersion) this.deletedRows.delete(key);
+        if (key.startsWith(currentPrefix) && overlay.commitVersion !== undefined && overlay.commitVersion <= readVersion) this.deletedRows.delete(key);
       }
     }
 
@@ -435,14 +453,18 @@ export class AppComponent implements OnInit {
       .filter(row => !this.deletedRows.has(this.rowIdentity(row)))
       .map(row => this.rowOverrides.get(this.rowIdentity(row))?.row ?? row);
 
-    if (startRow === 0 && this.createdRows.size) {
-      const created = [...this.createdRows.values()].map(overlay => overlay.row);
+    const currentCreated = [...this.createdRows.entries()]
+      .filter(([key]) => key.startsWith(currentPrefix))
+      .map(([, overlay]) => overlay.row);
+    if (startRow === 0 && currentCreated.length) {
+      const created = currentCreated;
       const existingKeys = new Set(items.map(row => this.rowIdentity(row)));
       items = [...created.filter(row => !existingKeys.has(this.rowIdentity(row))), ...items];
       items = items.slice(0, Math.max(0, endRow - startRow));
     }
 
-    const totalCount = Math.max(0, page.totalCount - this.deletedRows.size + this.createdRows.size);
+    const deletedCount = [...this.deletedRows.keys()].filter(key => key.startsWith(currentPrefix)).length;
+    const totalCount = Math.max(0, page.totalCount - deletedCount + currentCreated.length);
     return { ...page, items, totalCount };
   }
 
