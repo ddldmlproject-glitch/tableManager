@@ -18,9 +18,9 @@ export function createInfiniteRowsDatasource(
       const sort = params.sortModel?.[0];
       api.getRowsPage(schema, table, {
         offset: params.startRow,
-        limit: Math.max(1, params.endRow - params.startRow) || blockSize,
+        limit: params.endRow > params.startRow ? params.endRow - params.startRow : blockSize,
         sortBy: sort?.colId,
-        sortDirection: sort?.sort,
+        sortDirection: sort?.sort === 'desc' ? 'desc' : sort?.sort === 'asc' ? 'asc' : undefined,
         filterModel: params.filterModel as Record<string, unknown>
       }).subscribe({
         next: page => params.successCallback(page.items, page.total),
