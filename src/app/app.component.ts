@@ -11,7 +11,6 @@ import {
   GridReadyEvent,
   IDatasource,
   IGetRowsParams,
-  InfiniteRowModelModule,
   ModuleRegistry,
   RowSelectionOptions,
   SelectionChangedEvent,
@@ -31,7 +30,7 @@ import { DatabaseApiService } from './services/database-api.service';
 import { MockDatabaseService } from './services/mock-database.service';
 import { environment } from '../environments/environment';
 
-ModuleRegistry.registerModules([AllCommunityModule, InfiniteRowModelModule]);
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 type PageMode = 'workspace' | 'create';
 type ModalMode = 'add' | 'edit' | 'insert';
@@ -282,7 +281,8 @@ export class AppComponent implements OnInit {
           const filtered = this.applyMockFilterAndSort(
             this.table.rows,
             params.filterModel as Record<string, unknown>,
-            params.sortModel
+            params.sortModel,
+            this.searchText
           );
           this.totalRowCount = filtered.length;
           params.successCallback(filtered.slice(params.startRow, params.endRow), filtered.length);
@@ -298,10 +298,16 @@ export class AppComponent implements OnInit {
           startRow: params.startRow,
           endRow: params.endRow,
           sortModel: params.sortModel.map(item => ({ colId: item.colId, sort: item.sort })),
-          filterModel: params.filterModel as Record<string, unknown>
+          filterModel: params.filterModel as Record<string, unknown>,
+          searchText: this.searchText
         };
+        const requestedTableKey = table.schema + '.' + table.name;
         this.databaseApi.getRowsPage(table.schema, table.name, request).subscribe({
           next: page => {
+            if ((this.table.schema + '.' + this.table.name) !== requestedTableKey) {
+              params.successCallback([], 0);
+              return;
+            }
             const visiblePage = this.applyRemoteRowOverlays(page, params.startRow, params.endRow);
             this.totalRowCount = visiblePage.totalCount;
             // Retain only the page most recently supplied to AG Grid: never accumulate
@@ -321,9 +327,13 @@ export class AppComponent implements OnInit {
   private applyMockFilterAndSort(
     source: TableRow[],
     filterModel: Record<string, unknown> | undefined,
-    sortModel: Array<{ colId: string; sort: 'asc' | 'desc' }>
+    sortModel: Array<{ colId: string; sort: 'asc' | 'desc' }>,
+    searchText = ''
   ): TableRow[] {
-    let rows = [...source];
+    const term = searchText.trim().toLowerCase();
+    let rows = source.filter(row => !term || Object.values(row).some(value =>
+      String(value ?? '').toLowerCase().includes(term)
+    ));
     if (filterModel) {
       rows = rows.filter(row => Object.entries(filterModel).every(([field, raw]) => {
         if (!raw || typeof raw !== 'object') return true;
@@ -373,7 +383,10 @@ export class AppComponent implements OnInit {
     const overlayRow = result.row ?? row;
     if (overlayRow) this.rowOverrides.set(key, { row: { ...overlayRow }, commitVersion: result.commitVersion });
     const created = this.createdRows.get(key);
-    if (created) this.createdRows.set(key, { ...created, row: { ...overlayRow ?? created.row }, commitVersion: result.commitVersion });
+    if (created) {
+      const createdRow = overlayRow ?? created.row;
+      this.createdRows.set(key, { ...created, row: { ...createdRow }, commitVersion: result.commitVersion });
+    }
     const deleted = this.deletedRows.get(key);
     if (deleted) this.deletedRows.set(key, { commitVersion: result.commitVersion });
   }
@@ -445,6 +458,7 @@ export class AppComponent implements OnInit {
   updateSearch(value: string): void {
     this.searchText = value;
     this.refreshVisibleRows();
+    this.resetInfiniteDataSource();
   }
 
   refreshDataColumns(): void {
@@ -511,7 +525,7 @@ export class AppComponent implements OnInit {
       event.api.refreshCells({ force: true });
     }
 
-    if (column && (column.unique || column.primaryKey) && nextValue !== null && nextValue !== '' &&
+    if (this.useMockData && column && (column.unique || column.primaryKey) && nextValue !== null && nextValue !== '' &&
         this.table.rows.some(other => other !== row && other[field] === nextValue)) {
       row[field] = event.oldValue;
       event.api.refreshCells({ force: true });
