@@ -15,7 +15,9 @@ export const environment = {
       rows: '/data/{schema}/{table}/rows',
       tableCommands: '/schemas/tables/commands',
       schemaCommands: '/schemas/{schema}/tables/{table}/commands',
-      commands: '/data/{schema}/{table}/commands'
+      insertRow: '/data/{schema}/{table}/commands',
+      updateRow: '/data/{schema}/{table}/commands',
+      deleteRow: '/data/{schema}/{table}/commands'
     }
   }
 };
