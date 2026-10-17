@@ -9,6 +9,8 @@ import {
   TableSummary
 } from '../models/database.models';
 
+type DatabaseEndpointName = keyof typeof environment.databaseApi.endpoints;
+
 export interface RowsPageRequest {
   offset: number;
   limit: number;
@@ -166,7 +168,7 @@ export class DatabaseApiService {
   }
 
   private url(
-    name: keyof typeof this.config.endpoints,
+    name: DatabaseEndpointName,
     values: { schema?: string; table?: string } = {}
   ): string {
     let path = this.config.endpoints[name];
