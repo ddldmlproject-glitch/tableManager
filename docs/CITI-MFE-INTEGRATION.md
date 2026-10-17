@@ -204,3 +204,10 @@ Do **not** add NgRx just for this isolated screen if the Citi MFE does not alrea
 - Test stale Elasticsearch pages after a successful write; recently changed data must remain visible.
 - Test large responses and ensure no API returns the entire table by default.
 - Run unit tests and `npm run build` in the Citi MFE before merging.
+
+
+## Theme compatibility with the Citi MFE
+
+The copyable feature uses AG Grid legacy Quartz mode (`theme: 'legacy'`) and `ag-theme-quartz` on each grid, matching a host stylesheet that already imports `ag-grid-community/styles/ag-grid.css` followed by `ag-grid-community/styles/ag-theme-quartz.css`. The feature stylesheet scopes compact Quartz CSS variables to `.schema-manager-grid.ag-theme-quartz`.
+
+If Citi's `styles.scss` already includes those two AG Grid CSS imports, do not import the same stylesheets again from the feature. Preserve the existing import order: structural CSS first, theme CSS second. Avoid mixing the legacy CSS theme and the JavaScript `themeQuartz` object on these same grids.
