@@ -1,5 +1,7 @@
 # Integrate Oracle Schema Manager into the Citi Angular MFE
 
+**Easiest integration:** copy the entire `src/app/features/schema-manager/` folder into the Citi MFE and follow [its copy-paste README](../src/app/features/schema-manager/README.md). Import `SchemaManagerModule` into the existing feature module, then add `<app-schema-manager></app-schema-manager>` to the screen where it should appear. The folder is self-contained relative to this demo and uses component-scoped styles; do not copy the demo's root bootstrap or global stylesheet.
+
 This repository is a standalone Angular demo. The UI remains on in-memory sample data by default so it can be run without Citi services. The API adapter, infinite-scroll datasource, and optimistic rollback helper in this branch are reusable integration pieces; the private Citi MFE must map the configured endpoint paths/DTOs and wire the API-backed repository into its route before production CRUD uses real data.
 
 ## Recommended approach
