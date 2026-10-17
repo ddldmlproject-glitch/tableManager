@@ -67,7 +67,7 @@ button{cursor:pointer}
 .data-grid{height:380px}
 .create-grid{height:210px}
 :host ::ng-deep .ag-root-wrapper{border:0!important;border-radius:0!important}
-:host ::ng-deep .ag-theme-quartz{--ag-font-family:Inter,Arial,sans-serif;--ag-font-size:10px;--ag-border-color:#e8ecf3;--ag-header-background-color:#f8faff;--ag-header-foreground-color:#758096;--ag-foreground-color:#36435a;--ag-row-hover-color:#f4f7ff;--ag-selected-row-background-color:#eaf0ff;--ag-accent-color:#2457d6}
+
 .grid-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 16px;border-top:1px solid #edf0f5;color:#8d98ab;font-size:9px;line-height:1.5}
 .blue-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#6487e8;margin-right:7px;vertical-align:middle}
 .saving-label{color:#2555c0;font-weight:650;white-space:nowrap}
@@ -176,4 +176,20 @@ button{cursor:pointer}
   width: 100%;
   height: 100%;
   min-width: 0;
+}
+
+/* Match the standalone grid's compact enterprise appearance. Theme colors and
+   spacing are configured with themeQuartz.withParams() in the component. */
+
+:host ::ng-deep .schema-manager-grid .ag-header-cell-label {
+  font-weight: 700;
+}
+:host ::ng-deep .schema-manager-grid .ag-header-cell-text {
+  letter-spacing: .25px;
+}
+:host ::ng-deep .schema-manager-grid .ag-cell {
+  border-right: 1px solid #f0f2f6;
+}
+:host ::ng-deep .schema-manager-grid .ag-row {
+  border-bottom: 1px solid #edf0f5;
 }
