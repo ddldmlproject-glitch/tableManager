@@ -6,15 +6,31 @@ import {
   AllCommunityModule,
   CellValueChangedEvent,
   ColDef,
+  GridApi,
+  GridReadyEvent,
+  IDatasource,
+  IGetRowsParams,
+  InfiniteRowModelModule,
   ModuleRegistry,
   RowSelectionOptions,
   SelectionChangedEvent,
   themeQuartz
 } from 'ag-grid-community';
-import { ColumnDefinition, OracleDataType, TableRow, TableSchema } from './models/database.models';
+import { Observable } from 'rxjs';
+import {
+  ColumnDefinition,
+  OracleDataType,
+  RowCrudResponse,
+  TablePageRequest,
+  TablePageResponse,
+  TableRow,
+  TableSchema
+} from './models/database.models';
+import { DatabaseApiService } from './services/database-api.service';
 import { MockDatabaseService } from './services/mock-database.service';
+import { environment } from '../environments/environment';
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([AllCommunityModule, InfiniteRowModelModule]);
 
 type PageMode = 'workspace' | 'create';
 type ModalMode = 'add' | 'edit' | 'insert';
@@ -33,13 +49,33 @@ const blankColumn = (id: number): ColumnDefinition => ({
 });
 
 @Component({
-  selector: 'app-root',
+  selector: 'app-table-manager-feature',
   standalone: true,
   imports: [CommonModule, FormsModule, AgGridAngular],
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit {
-  constructor(private readonly mockDb: MockDatabaseService) {}
+  constructor(
+    private readonly mockDb: MockDatabaseService,
+    private readonly databaseApi: DatabaseApiService
+  ) {}
+
+  readonly useMockData = environment.useMockData;
+  readonly cacheBlockSize = environment.rowPageSize;
+  readonly maxBlocksInCache = environment.maxCachedRowBlocks;
+  private liveTableCatalog: TableSchema[] = [];
+  private activeLiveTable: TableSchema | null = null;
+  private dataGridApi: GridApi<TableRow> | null = null;
+  dataSource!: IDatasource;
+  totalRowCount = 0;
+
+  /**
+   * Optimistic overlays mask eventual-consistency lag in the Elasticsearch read index.
+   * The backend should return commitVersion for writes and readVersion for page reads.
+   */
+  private readonly rowOverrides = new Map<string, { row: TableRow; commitVersion?: number }>();
+  private readonly createdRows = new Map<string, { row: TableRow; commitVersion?: number }>();
+  private readonly deletedRows = new Map<string, { commitVersion?: number }>();
 
   readonly gridTheme = themeQuartz;
   readonly rowSelection: RowSelectionOptions = {
@@ -91,11 +127,17 @@ export class AppComponent implements OnInit {
   private schemaBaseline: ColumnDefinition[] = [];
 
   get tables(): TableSchema[] {
-    return this.mockDb.tables;
+    return this.useMockData ? this.mockDb.tables : this.liveTableCatalog;
   }
 
   get table(): TableSchema {
-    return this.mockDb.tableByName(this.selectedTableName) ?? this.tables[0];
+    if (this.useMockData) {
+      return this.mockDb.tableByName(this.selectedTableName) ?? this.tables[0];
+    }
+    return this.activeLiveTable ??
+      this.liveTableCatalog.find(item => item.name === this.selectedTableName) ??
+      this.liveTableCatalog[0] ??
+      { name: this.selectedTableName, schema: '', tablespace: '', comment: '', columns: [], rows: [] };
   }
 
   private activeColumnsCache: ColumnDefinition[] = [];
@@ -136,9 +178,37 @@ export class AppComponent implements OnInit {
   dataColDefs: ColDef<TableRow>[] = [];
 
   ngOnInit(): void {
+    this.dataSource = this.createDataSource();
+    if (!this.useMockData) {
+      this.loadLiveTableCatalog();
+      return;
+    }
     this.refreshDataColumns();
     this.refreshVisibleRows();
+    this.totalRowCount = this.table.rows.length;
     this.takeSchemaSnapshot();
+  }
+
+  private loadLiveTableCatalog(): void {
+    this.databaseApi.listTables().subscribe({
+      next: summaries => {
+        this.liveTableCatalog = summaries.map(item => ({
+          name: item.tableName,
+          schema: item.schema,
+          tablespace: '',
+          comment: '',
+          columns: [],
+          rows: []
+        }));
+        if (!this.liveTableCatalog.length) {
+          this.notify('The API returned no tables for this user/schema.', true);
+          return;
+        }
+        const first = this.liveTableCatalog.find(item => item.name === this.selectedTableName) ?? this.liveTableCatalog[0];
+        this.selectTable(first.name);
+      },
+      error: error => this.notify(this.apiErrorMessage('Unable to load table list', error), true)
+    });
   }
 
   selectTable(name: string): void {
@@ -147,21 +217,192 @@ export class AppComponent implements OnInit {
     this.selectedColumn = null;
     this.selectedRow = null;
     this.searchText = '';
+    this.totalRowCount = 0;
+
+    if (this.useMockData) {
+      this.activeLiveTable = null;
+      this.refreshDataColumns();
+      this.refreshVisibleRows();
+      this.totalRowCount = this.table.rows.length;
+      this.takeSchemaSnapshot();
+      this.resetInfiniteDataSource();
+      this.notify('Loaded ' + name + ' schema and sample records.');
+      return;
+    }
+
+    const summary = this.liveTableCatalog.find(item => item.name === name);
+    if (!summary) {
+      this.notify('The selected table is not available in the API table list.', true);
+      return;
+    }
+    this.activeLiveTable = { ...summary, columns: [], rows: [] };
     this.refreshDataColumns();
-    this.refreshVisibleRows();
-    this.takeSchemaSnapshot();
-    this.notify('Loaded ' + name + ' schema and sample records.');
+    this.resetInfiniteDataSource();
+    this.databaseApi.getTable(summary.schema, summary.name).subscribe({
+      next: schema => {
+        if (this.selectedTableName !== name) return;
+        this.activeLiveTable = { ...schema, rows: [] };
+        const catalogIndex = this.liveTableCatalog.findIndex(item => item.schema === schema.schema && item.name === schema.name);
+        if (catalogIndex >= 0) this.liveTableCatalog[catalogIndex] = this.activeLiveTable;
+        this.refreshDataColumns();
+        this.refreshVisibleRows();
+        this.takeSchemaSnapshot();
+        this.resetInfiniteDataSource();
+        this.notify('Loaded ' + schema.schema + '.' + schema.name + '.');
+      },
+      error: error => this.notify(this.apiErrorMessage('Unable to load table schema', error), true)
+    });
   }
 
   refreshVisibleRows(): void {
     const term = this.searchText.trim().toLowerCase();
-    // Always publish a fresh rowData array when the selected table/search changes.
-    // Keep row objects themselves shared with the mock DB so edits persist locally.
     this.visibleRowsCache = !term
       ? [...this.table.rows]
       : this.table.rows.filter(row =>
           Object.values(row).some(value => String(value ?? '').toLowerCase().includes(term))
         );
+  }
+
+  onDataGridReady(event: GridReadyEvent<TableRow>): void {
+    this.dataGridApi = event.api;
+    event.api.setGridOption('datasource', this.createDataSource());
+  }
+
+  private resetInfiniteDataSource(): void {
+    this.dataSource = this.createDataSource();
+    this.dataGridApi?.setGridOption('datasource', this.dataSource);
+  }
+
+  private createDataSource(): IDatasource {
+    return {
+      rowCount: this.useMockData ? this.table.rows.length : undefined,
+      getRows: (params: IGetRowsParams) => {
+        if (this.useMockData) {
+          const filtered = this.applyMockFilterAndSort(
+            this.table.rows,
+            params.filterModel as Record<string, unknown>,
+            params.sortModel
+          );
+          this.totalRowCount = filtered.length;
+          params.successCallback(filtered.slice(params.startRow, params.endRow), filtered.length);
+          return;
+        }
+
+        const table = this.activeLiveTable ?? this.table;
+        if (!table.schema || !table.name || !table.columns.length) {
+          params.successCallback([], 0);
+          return;
+        }
+        const request: TablePageRequest = {
+          startRow: params.startRow,
+          endRow: params.endRow,
+          sortModel: params.sortModel.map(item => ({ colId: item.colId, sort: item.sort })),
+          filterModel: params.filterModel as Record<string, unknown>
+        };
+        this.databaseApi.getRowsPage(table.schema, table.name, request).subscribe({
+          next: page => {
+            const visiblePage = this.applyRemoteRowOverlays(page, params.startRow, params.endRow);
+            this.totalRowCount = visiblePage.totalCount;
+            // Retain only the page most recently supplied to AG Grid: never accumulate
+            // a large table in the component's memory.
+            if (this.activeLiveTable) this.activeLiveTable.rows = visiblePage.items;
+            params.successCallback(visiblePage.items, visiblePage.totalCount);
+          },
+          error: error => {
+            params.failCallback();
+            this.notify(this.apiErrorMessage('Unable to load table rows', error), true);
+          }
+        });
+      }
+    };
+  }
+
+  private applyMockFilterAndSort(
+    source: TableRow[],
+    filterModel: Record<string, unknown> | undefined,
+    sortModel: Array<{ colId: string; sort: 'asc' | 'desc' }>
+  ): TableRow[] {
+    let rows = [...source];
+    if (filterModel) {
+      rows = rows.filter(row => Object.entries(filterModel).every(([field, raw]) => {
+        if (!raw || typeof raw !== 'object') return true;
+        const filter = raw as { filter?: unknown; type?: string; values?: unknown[] };
+        const value = String(row[field] ?? '').toLowerCase();
+        if (Array.isArray(filter.values)) return filter.values.some(item => String(item).toLowerCase() === value);
+        if (filter.filter === undefined || filter.filter === null || filter.filter === '') return true;
+        const needle = String(filter.filter).toLowerCase();
+        switch (filter.type) {
+          case 'equals': return value === needle;
+          case 'notEqual': return value !== needle;
+          case 'startsWith': return value.startsWith(needle);
+          case 'endsWith': return value.endsWith(needle);
+          case 'notContains': return !value.includes(needle);
+          default: return value.includes(needle);
+        }
+      }));
+    }
+    if (sortModel?.length) {
+      rows.sort((a, b) => {
+        for (const sort of sortModel) {
+          const left = a[sort.colId];
+          const right = b[sort.colId];
+          const comparison = left == null && right == null ? 0
+            : left == null ? -1
+            : right == null ? 1
+            : typeof left === 'number' && typeof right === 'number' ? left - right
+            : String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: 'base' });
+          if (comparison) return sort.sort === 'desc' ? -comparison : comparison;
+        }
+        return 0;
+      });
+    }
+    return rows;
+  }
+
+  private rowIdentity(row: TableRow): string {
+    const primaryKey = this.table.columns.find(column => column.primaryKey);
+    const value = primaryKey ? row[primaryKey.name] : JSON.stringify(row);
+    return [this.table.schema, this.table.name, primaryKey?.name ?? '_row', String(value ?? '')].join(':');
+  }
+
+  private applyRemoteRowOverlays(page: TablePageResponse, startRow: number, endRow: number): TablePageResponse {
+    const readVersion = page.readVersion;
+    if (readVersion !== undefined) {
+      for (const [key, overlay] of this.rowOverrides) {
+        if (overlay.commitVersion !== undefined && overlay.commitVersion <= readVersion) this.rowOverrides.delete(key);
+      }
+      for (const [key, overlay] of this.createdRows) {
+        if (overlay.commitVersion !== undefined && overlay.commitVersion <= readVersion) this.createdRows.delete(key);
+      }
+      for (const [key, overlay] of this.deletedRows) {
+        if (overlay.commitVersion !== undefined && overlay.commitVersion <= readVersion) this.deletedRows.delete(key);
+      }
+    }
+
+    let items = page.items
+      .filter(row => !this.deletedRows.has(this.rowIdentity(row)))
+      .map(row => this.rowOverrides.get(this.rowIdentity(row))?.row ?? row);
+
+    if (startRow === 0 && this.createdRows.size) {
+      const created = [...this.createdRows.values()].map(overlay => overlay.row);
+      const existingKeys = new Set(items.map(row => this.rowIdentity(row)));
+      items = [...created.filter(row => !existingKeys.has(this.rowIdentity(row))), ...items];
+      items = items.slice(0, Math.max(0, endRow - startRow));
+    }
+
+    const totalCount = Math.max(0, page.totalCount - this.deletedRows.size + this.createdRows.size);
+    return { ...page, items, totalCount };
+  }
+
+  private apiErrorMessage(action: string, error: unknown): string {
+    const status = typeof error === 'object' && error !== null && 'status' in error
+      ? Number((error as { status: unknown }).status)
+      : 0;
+    if (status === 401 || status === 403) return action + ': access denied. Check Citi API authorization.';
+    if (status === 409) return action + ': the record changed or conflicts with another update. Refresh and retry.';
+    if (status === 400 || status === 422) return action + ': the server rejected the data. Review required fields and constraints.';
+    if (status === 0) return action + ': network error or request timeout.';
+    return action + ' (HTTP ' + status + '). Please retry or contact support.';
   }
 
   updateSearch(value: string): void {
