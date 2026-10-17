@@ -1031,7 +1031,16 @@ export class AppComponent implements OnInit {
     this.refreshDataColumns();
     this.refreshVisibleRows();
     this.totalRowCount = 0;
-    this.resetInfiniteDataSource();
+    if (this.useMockData) {
+      this.resetInfiniteDataSource();
+    } else {
+      // Clear rows now, but do not GET a table that the create POST has not committed yet.
+      this.dataSource = {
+        rowCount: 0,
+        getRows: params => params.successCallback([], 0)
+      };
+      this.dataGridApi?.setGridOption('datasource', this.dataSource);
+    }
     const { rows: _rows, ...definition } = newTable;
 
     this.persistOptimistically(
@@ -1053,7 +1062,10 @@ export class AppComponent implements OnInit {
         ? 'Table created in local sample data. The data grid is ready for row inserts.'
         : 'Table created. The data grid is ready for row inserts.',
       'Create failed. The table was removed and the previous selection restored.',
-      () => this.takeSchemaSnapshot(),
+      () => {
+        this.takeSchemaSnapshot();
+        if (!this.useMockData) this.resetInfiniteDataSource();
+      },
       this.useMockData ? undefined : () => this.databaseApi.createTable(definition)
     );
   }
