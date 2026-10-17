@@ -100,3 +100,10 @@ For large tables, use the included infinite datasource with AG Grid Community's 
 For immediate UX, apply UI changes optimistically and retain the old state to rollback on API errors. After successful POST, prefer the authoritative response or a record version. Do not immediately re-read a lagging Elasticsearch index; keep a short-lived local overlay for changed/deleted records until an index watermark or source-of-truth read confirms the index has caught up.
 
 No NgRx is required just to display this component. Reuse the host's existing state-management pattern if the screen's state must be shared across routes/remotes.
+
+
+## Matching the standalone grid styles (4200) in the Citi MFE (4500)
+
+The component now configures Quartz with `themeQuartz.withParams()` rather than relying only on `.ag-theme-quartz` CSS variables. It also adds a `schema-manager-grid` class to each grid and scopes header/cell tweaks to that class. These are supported by the modern AG Grid Theming API; see the official [theme parameter guide](https://www.ag-grid.com/angular-data-grid/theming-parameters/) and [migration guidance](https://www.ag-grid.com/angular-data-grid/theming-migration/).
+
+The standalone project in this repo uses AG Grid 36.2.0. The Citi screenshot shows 35.3.1. Keep Citi's approved 35.3.1 rather than upgrading only for appearance, and avoid loading two AG Grid versions or importing the demo's global CSS. Explicit parameters should bring the core font, spacing, headers, rows, and colors closer, but pixel-perfect matching may still require removing Citi global selectors that target `.ag-header`, `.ag-cell`, `.ag-row`, or `.ag-root-wrapper`.
