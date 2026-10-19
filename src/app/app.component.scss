@@ -360,10 +360,17 @@ button{cursor:pointer}
 }
 
 /* Native controls in schema-grid boolean cells match the Edit column dialog. */
-:host ::ng-deep .schema-manager-grid.ag-theme-quartz .schema-checkbox-cell {
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .schema-checkbox-cell .ag-cell-wrapper {
+  display: flex !important;
+  align-items: center;
+  width: 100%;
+}
+
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .schema-checkbox-cell .ag-cell-value {
   display: flex !important;
   align-items: center;
   justify-content: center;
+  width: 100%;
 }
 
 :host ::ng-deep .schema-manager-grid.ag-theme-quartz .schema-grid-checkbox {
