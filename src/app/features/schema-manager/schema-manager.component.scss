@@ -301,14 +301,15 @@ button{cursor:pointer}
   color: var(--sm-text-muted);
 }
 
-/* Use readable fonts for data and schema metadata. Table data is deliberately
-   slightly larger than the schema metadata grid. */
+/* Use the supported legacy Quartz checkbox variables instead of manually
+   overriding AG Grid's internal checkbox wrapper and pseudo-element styles.
+   This preserves the checkbox icon supplied by ag-grid.css. */
 :host ::ng-deep .schema-manager-grid.ag-theme-quartz {
-  --ag-checkbox-background-color: var(--sm-checkbox-bg);
-  --ag-checkbox-checked-color: var(--sm-checkbox-tick);
-  --ag-checkbox-unchecked-color: var(--sm-checkbox-border);
-  --ag-checkbox-indeterminate-color: var(--sm-checkbox-tick);
-  --ag-active-color: var(--sm-checkbox-checked-bg);
+  --ag-checkbox-background-color: #ffffff;
+  --ag-checkbox-checked-color: #174bd1;
+  --ag-checkbox-unchecked-color: #46556d;
+  --ag-checkbox-indeterminate-color: #174bd1;
+  --ag-active-color: #174bd1;
   --ag-font-family: Inter, Arial, sans-serif;
   --ag-font-size: 11px;
   --ag-header-font-size: 10px;
@@ -339,42 +340,6 @@ button{cursor:pointer}
 
   .ag-row {
     border-bottom: 1px solid var(--sm-grid-border);
-  }
-
-  /* AG Grid uses an icon-based checkbox renderer for boolean cells. Keep it
-     high contrast even when the checkbox is read-only/disabled in the grid. */
-  .ag-checkbox,
-  .ag-checkbox-input-wrapper,
-  .ag-checkbox-input-wrapper.ag-disabled {
-    opacity: 1 !important;
-  }
-
-  .ag-checkbox-input-wrapper {
-    width: 16px;
-    height: 16px;
-    min-width: 16px;
-    border: 1px solid var(--sm-checkbox-border) !important;
-    border-radius: 3px;
-    background-color: var(--sm-checkbox-bg) !important;
-    color: var(--sm-checkbox-border) !important;
-    box-shadow: none;
-  }
-
-  .ag-checkbox-input-wrapper::after {
-    opacity: 1 !important;
-    color: var(--sm-checkbox-border) !important;
-  }
-
-  .ag-checkbox-input-wrapper.ag-checked,
-  .ag-checkbox-input-wrapper.ag-indeterminate {
-    border-color: var(--sm-checkbox-checked-bg) !important;
-    background-color: var(--sm-checkbox-checked-bg) !important;
-    color: var(--sm-checkbox-tick) !important;
-  }
-
-  .ag-checkbox-input-wrapper.ag-checked::after,
-  .ag-checkbox-input-wrapper.ag-indeterminate::after {
-    color: var(--sm-checkbox-tick) !important;
   }
 }
 
