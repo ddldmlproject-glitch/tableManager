@@ -343,6 +343,48 @@ button{cursor:pointer}
   }
 }
 
+
+/* Force a visible check mark in the checked state. The host application's
+   legacy AG Grid CSS may override the icon-font glyph, so render a text tick
+   for checked and indeterminate checkboxes inside this feature only. */
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper.ag-checked,
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper.ag-indeterminate {
+  background-color: #174bd1 !important;
+  border: 1px solid #174bd1 !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper.ag-checked::after {
+  content: '✓' !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 16px !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  display: block !important;
+  text-align: center !important;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+}
+
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper.ag-indeterminate::after {
+  content: '−' !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 14px !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  display: block !important;
+  text-align: center !important;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+}
+
 :host ::ng-deep .data-grid > .schema-manager-grid.ag-theme-quartz {
   --ag-font-size: 12px;
   --ag-header-font-size: 11px;
