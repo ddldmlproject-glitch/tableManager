@@ -220,36 +220,8 @@ button{cursor:pointer}
   --sm-accent-text: #5272b6;
 }
 
-/* Common Citi/IGDS host theme patterns. If the host uses a different selector,
-   map that selector here rather than changing application-wide styles. */
-:host-context(.dark-theme),
-:host-context(.dark-mode),
-:host-context(.theme-dark),
-:host-context(.dark),
-:host-context([data-theme='dark']),
-:host-context([data-color-scheme='dark']),
-:host-context([class*='dark']) {
-  --sm-page-bg: #111827;
-  --sm-surface: #1b2433;
-  --sm-surface-muted: #222d3e;
-  --sm-text: #e5eaf2;
-  --sm-text-muted: #b1bdcd;
-  --sm-border: #3c485b;
-  --sm-input-bg: #151e2c;
-  --sm-input-text: #e8edf5;
-  --sm-input-border: #536279;
-  --sm-grid-bg: #182231;
-  --sm-grid-text: #e0e7f1;
-  --sm-grid-header-bg: #222d3e;
-  --sm-grid-header-text: #c4cede;
-  --sm-grid-border: #3c485b;
-  --sm-checkbox-bg: #151e2c;
-  --sm-checkbox-border: #c2ccda;
-  --sm-checkbox-checked-bg: #3478f6;
-  --sm-checkbox-tick: #ffffff;
-  --sm-label-text: #b1bdcd;
-  --sm-accent-text: #9bbcff;
-}
+/* This feature is intentionally light-themed for now.
+   Dark host classes do not override these variables. */
 
 /* Make the full feature independently scrollable even if an MFE content shell
    constrains or clips its route viewport. */
