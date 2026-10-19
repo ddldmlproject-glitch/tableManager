@@ -316,12 +316,7 @@ button{cursor:pointer}
 
 /* Use readable fonts for data and schema metadata. Table data is deliberately
    slightly larger than the schema metadata grid. */
-:host ::ng-deep .schema-manager-grid.ag-theme-quartz {
-  --ag-checkbox-background-color: var(--sm-checkbox-bg);
-  --ag-checkbox-checked-color: var(--sm-checkbox-tick);
-  --ag-checkbox-unchecked-color: var(--sm-checkbox-border);
-  --ag-checkbox-indeterminate-color: var(--sm-checkbox-tick);
-  --ag-active-color: var(--sm-checkbox-checked-bg);
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz {  --ag-active-color: var(--sm-checkbox-checked-bg);
   --ag-font-family: Inter, Arial, sans-serif;
   --ag-font-size: 11px;
   --ag-header-font-size: 10px;
@@ -396,6 +391,37 @@ button{cursor:pointer}
   --ag-header-font-size: 11px;
   --ag-row-height: 36px;
   --ag-cell-horizontal-padding: 9px;
+}
+
+/* Native controls in schema-grid boolean cells match the Edit column dialog. */
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .schema-checkbox-cell {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .schema-grid-checkbox {
+  appearance: auto !important;
+  -webkit-appearance: checkbox !important;
+  display: inline-block !important;
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: initial !important;
+  border-radius: 2px !important;
+  background: initial !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  accent-color: #174bd1 !important;
+  pointer-events: none;
+  cursor: default;
+  vertical-align: middle;
+}
+
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .schema-grid-checkbox:focus {
+  outline: none;
 }
 
 /* Native form controls used by the column/row dialogs follow the same accent. */
