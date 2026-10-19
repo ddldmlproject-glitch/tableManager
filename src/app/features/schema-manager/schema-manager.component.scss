@@ -1,4 +1,4 @@
-:host{display:block;font-family:Inter,Arial,sans-serif;color:#18243b;background:#f3f5f9;font-synthesis:none;text-rendering:optimizeLegibility;font-size:13px}
+ :host{display:block;color-scheme:light;font-family:Inter,Arial,sans-serif;color:#18243b;background:#f3f5f9;font-synthesis:none;text-rendering:optimizeLegibility;font-size:13px}
 *{box-sizing:border-box}
 button,input,select{font:inherit}
 button{cursor:pointer}
@@ -195,9 +195,10 @@ button{cursor:pointer}
 
 /* Theme tokens live on this feature host, so both grid and surrounding controls
    follow the host application's light/dark theme classes. */
-:host {
+ :host {
   display: block;
   min-width: 0;
+  color-scheme: light;
   --sm-page-bg: #f3f5f9;
   --sm-surface: #ffffff;
   --sm-surface-muted: #f8faff;
