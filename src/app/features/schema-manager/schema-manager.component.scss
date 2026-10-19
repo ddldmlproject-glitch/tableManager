@@ -304,12 +304,7 @@ button{cursor:pointer}
 /* Use the supported legacy Quartz checkbox variables instead of manually
    overriding AG Grid's internal checkbox wrapper and pseudo-element styles.
    This preserves the checkbox icon supplied by ag-grid.css. */
-:host ::ng-deep .schema-manager-grid.ag-theme-quartz {
-  --ag-checkbox-background-color: #ffffff;
-  --ag-checkbox-checked-color: #174bd1;
-  --ag-checkbox-unchecked-color: #46556d;
-  --ag-checkbox-indeterminate-color: #174bd1;
-  --ag-active-color: #174bd1;
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz {  --ag-active-color: #174bd1;
   --ag-font-family: Inter, Arial, sans-serif;
   --ag-font-size: 11px;
   --ag-header-font-size: 10px;
@@ -344,52 +339,42 @@ button{cursor:pointer}
 }
 
 
-/* Force a visible check mark in the checked state. The host application's
-   legacy AG Grid CSS may override the icon-font glyph, so render a text tick
-   for checked and indeterminate checkboxes inside this feature only. */
-:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper.ag-checked,
-:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper.ag-indeterminate {
-  background-color: #174bd1 !important;
-  border: 1px solid #174bd1 !important;
-  color: #ffffff !important;
-  opacity: 1 !important;
-}
-
-:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper.ag-checked::after {
-  content: '✓' !important;
-  font-family: Arial, Helvetica, sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  line-height: 16px !important;
-  color: #ffffff !important;
-  opacity: 1 !important;
-  display: block !important;
-  text-align: center !important;
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-}
-
-:host ::ng-deep .schema-manager-grid.ag-theme-quartz .ag-checkbox-input-wrapper.ag-indeterminate::after {
-  content: '−' !important;
-  font-family: Arial, Helvetica, sans-serif !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  line-height: 14px !important;
-  color: #ffffff !important;
-  opacity: 1 !important;
-  display: block !important;
-  text-align: center !important;
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-}
-
 :host ::ng-deep .data-grid > .schema-manager-grid.ag-theme-quartz {
   --ag-font-size: 12px;
   --ag-header-font-size: 11px;
   --ag-row-height: 36px;
   --ag-cell-horizontal-padding: 9px;
+}
+
+/* Native controls in schema-grid boolean cells match the Edit column dialog. */
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .schema-checkbox-cell {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .schema-grid-checkbox {
+  appearance: auto !important;
+  -webkit-appearance: checkbox !important;
+  display: inline-block !important;
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: initial !important;
+  border-radius: 2px !important;
+  background: initial !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  accent-color: #174bd1 !important;
+  pointer-events: none;
+  cursor: default;
+  vertical-align: middle;
+}
+
+:host ::ng-deep .schema-manager-grid.ag-theme-quartz .schema-grid-checkbox:focus {
+  outline: none;
 }
 
 /* Native form controls used by the column/row dialogs follow the same accent. */
