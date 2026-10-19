@@ -53,7 +53,7 @@ Alternatively, import the standalone component in your route configuration and u
 
 ### 5. Preserve Citi behavior and theme
 - Do not copy this demo's global `src/styles.scss` or `src/index.html`.
-- Keep the new component's `schema-manager.component.scss` scoped. The component SCSS supports common dark-theme host selectors and uses explicit accessible checkbox colors.
+- Keep the new component's `schema-manager.component.scss` scoped. The component is intentionally light-themed for now and uses explicit accessible checkbox colors.
 - Continue using your existing Citi auth, HTTP interceptors, environment handling, telemetry and IGDS tokens/components.
 - Run the existing MFE build and test in a feature branch before merging.
 
