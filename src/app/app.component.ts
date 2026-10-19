@@ -8,7 +8,8 @@ import {
   ColDef,
   ModuleRegistry,
   RowSelectionOptions,
-  SelectionChangedEvent
+  SelectionChangedEvent,
+  ICellRendererParams
 } from 'ag-grid-community';
 import { ColumnDefinition, OracleDataType, TableRow, TableSchema } from './models/database.models';
 import { MockDatabaseService } from './services/mock-database.service';
@@ -17,6 +18,22 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 type PageMode = 'workspace' | 'create';
 type ModalMode = 'add' | 'edit' | 'insert';
+
+const schemaBooleanCheckboxRenderer = (
+  params: ICellRendererParams<ColumnDefinition, boolean>
+): HTMLInputElement => {
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = Boolean(params.value);
+  checkbox.tabIndex = -1;
+  checkbox.className = 'schema-grid-checkbox';
+  checkbox.setAttribute('aria-readonly', 'true');
+  const label = params.colDef?.headerName ?? params.colDef?.field ?? 'Schema property';
+  checkbox.setAttribute('aria-label', label + (checkbox.checked ? ': checked' : ': unchecked'));
+  // Display-only in the grid; edit the property through the column dialog.
+  checkbox.style.pointerEvents = 'none';
+  return checkbox;
+};
 
 const blankColumn = (id: number): ColumnDefinition => ({
   id,
@@ -125,11 +142,11 @@ export class AppComponent implements OnInit {
     { field: 'dataType', headerName: 'DATA TYPE', minWidth: 115 },
     { field: 'length', headerName: 'LENGTH / PRECISION', minWidth: 135 },
     { field: 'scale', headerName: 'SCALE', maxWidth: 95 },
-    { field: 'nullable', headerName: 'NULLABLE', valueFormatter: params => params.value ? 'YES' : 'NO', maxWidth: 105 },
+    { field: 'nullable', headerName: 'NULLABLE', cellRenderer: schemaBooleanCheckboxRenderer, cellClass: 'schema-checkbox-cell', maxWidth: 105 },
     { field: 'defaultValue', headerName: 'DEFAULT VALUE', minWidth: 140 },
-    { field: 'unique', headerName: 'UNIQUE', valueFormatter: params => params.value ? 'YES' : '—', maxWidth: 100 },
-    { field: 'indexed', headerName: 'INDEXED', valueFormatter: params => params.value ? 'YES' : '—', maxWidth: 100 },
-    { field: 'primaryKey', headerName: 'PRIMARY KEY', valueFormatter: params => params.value ? 'PK' : '—', maxWidth: 110 },
+    { field: 'unique', headerName: 'UNIQUE', cellRenderer: schemaBooleanCheckboxRenderer, cellClass: 'schema-checkbox-cell', maxWidth: 100 },
+    { field: 'indexed', headerName: 'INDEXED', cellRenderer: schemaBooleanCheckboxRenderer, cellClass: 'schema-checkbox-cell', maxWidth: 100 },
+    { field: 'primaryKey', headerName: 'PRIMARY KEY', cellRenderer: schemaBooleanCheckboxRenderer, cellClass: 'schema-checkbox-cell', maxWidth: 110 },
     { field: 'status', headerName: 'CHANGE STATUS', valueFormatter: params => params.value ? String(params.value).toUpperCase() : '—', minWidth: 125 }
   ];
 
