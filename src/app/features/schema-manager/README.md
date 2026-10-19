@@ -111,4 +111,4 @@ The standalone project in this repo uses AG Grid 36.2.0. The Citi screenshot sho
 
 ## Checkbox contrast and DML grid text sizing
 
-The feature's legacy Quartz theme explicitly sets checkbox icon/background colors and keeps checkbox icon opacity at 100%, scoped to this feature only. The Table data grid uses a 12px body font, 11px header font and 36px row height; the schema metadata grid stays compact. If the host stylesheet uses stronger global `!important` rules, inspect computed styles for `.ag-checkbox-input-wrapper::after` in DevTools.
+The feature uses AG Grid's documented legacy Quartz checkbox CSS variables for checkbox background, checked, unchecked, and indeterminate icon colors. It no longer overrides internal checkbox wrapper dimensions, opacity, or pseudo-elements, so the icon supplied by `ag-grid.css` renders normally. The Table data grid uses a 12px body font, 11px header font and 36px row height; the schema metadata grid stays compact. If styles are still overridden in Citi, inspect computed styles for `--ag-checkbox-checked-color` and `--ag-checkbox-unchecked-color` in DevTools.
