@@ -349,41 +349,7 @@ button{cursor:pointer}
     border-bottom: 1px solid var(--sm-grid-border);
   }
 
-  /* AG Grid uses an icon-based checkbox renderer for boolean cells. Keep it
-     high contrast even when the checkbox is read-only/disabled in the grid. */
-  .ag-checkbox,
-  .ag-checkbox-input-wrapper,
-  .ag-checkbox-input-wrapper.ag-disabled {
-    opacity: 1 !important;
-  }
 
-  .ag-checkbox-input-wrapper {
-    width: 16px;
-    height: 16px;
-    min-width: 16px;
-    border: 1px solid var(--sm-checkbox-border) !important;
-    border-radius: 3px;
-    background-color: var(--sm-checkbox-bg) !important;
-    color: var(--sm-checkbox-border) !important;
-    box-shadow: none;
-  }
-
-  .ag-checkbox-input-wrapper::after {
-    opacity: 1 !important;
-    color: var(--sm-checkbox-border) !important;
-  }
-
-  .ag-checkbox-input-wrapper.ag-checked,
-  .ag-checkbox-input-wrapper.ag-indeterminate {
-    border-color: var(--sm-checkbox-checked-bg) !important;
-    background-color: var(--sm-checkbox-checked-bg) !important;
-    color: var(--sm-checkbox-tick) !important;
-  }
-
-  .ag-checkbox-input-wrapper.ag-checked::after,
-  .ag-checkbox-input-wrapper.ag-indeterminate::after {
-    color: var(--sm-checkbox-tick) !important;
-  }
 }
 
 :host ::ng-deep .data-grid > .schema-manager-grid.ag-theme-quartz {
@@ -409,10 +375,6 @@ button{cursor:pointer}
   min-width: 14px;
   margin: 0 !important;
   padding: 0 !important;
-  border: initial !important;
-  border-radius: 2px !important;
-  background: initial !important;
-  box-shadow: none !important;
   opacity: 1 !important;
   accent-color: #174bd1 !important;
   pointer-events: none;
