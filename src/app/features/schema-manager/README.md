@@ -55,7 +55,7 @@ Alternatively, import the standalone component in your route configuration and u
 
 ### 5. Preserve Citi behavior and theme
 - Do not copy this demo's global `src/styles.scss` or `src/index.html`.
-- Keep the new component's `schema-manager.component.scss` scoped. The component is intentionally light-themed for now and uses explicit accessible checkbox colors. The page grows with its content instead of using a nested fixed-height scroller, so the host page can scroll through all DML content to the footer.
+- Keep the new component's `schema-manager.component.scss` scoped. The component is intentionally light-themed for now and uses explicit accessible checkbox colors. The feature uses a bounded internal scroll viewport for Citi MFE shells that clip page overflow. The main content area scrolls independently to the DML grid and footer while the feature header remains visible. The default host-shell offset is 160px; override `--schema-manager-host-offset` on the feature host if the Citi header/navigation uses a different height.
 - Continue using your existing Citi auth, HTTP interceptors, environment handling, telemetry and IGDS tokens/components.
 - Run the existing MFE build and test in a feature branch before merging.
 
