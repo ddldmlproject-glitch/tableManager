@@ -32,6 +32,7 @@ button{cursor:pointer}
 .table-picker select{height:39px;background:#fff;border:1px solid #cfd7e5;border-radius:7px;padding:0 11px;color:#22314d;font-weight:600;font-size:11px;outline:none}
 .table-picker select:focus{border-color:#3467d9;box-shadow:0 0 0 3px #2457d51a}
 .metric-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:19px}
+.dml-metric-row{grid-template-columns:repeat(3,minmax(0,1fr))}
 .metric-card{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e3e8f0;border-radius:10px;padding:15px 16px;min-width:0;box-shadow:0 2px 10px #18305a04}
 .metric-icon{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;border-radius:8px;font-size:17px;font-weight:700}
 .metric-icon.blue{background:#edf2ff;color:#285bcd}
@@ -131,6 +132,7 @@ button{cursor:pointer}
 @media(max-width:1200px){
   .content{padding:24px 20px}
   .metric-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dml-metric-row{grid-template-columns:repeat(2,minmax(0,1fr))}
   .column-form{grid-template-columns:repeat(3,minmax(100px,1fr))}
 }
 @media(max-width:850px){
@@ -157,6 +159,7 @@ button{cursor:pointer}
   .topbar>.btn{font-size:9px;padding:7px}
   .view-tabs>button{padding:0 10px;font-size:10px}
   .metric-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .dml-metric-row{grid-template-columns:repeat(2,minmax(0,1fr))}
   .metric-card{padding:11px;gap:8px}
   .metric-icon{width:28px;height:28px;font-size:13px}
   .metric-card span{font-size:7px;letter-spacing:.3px}
