@@ -45,7 +45,7 @@ export class ExistingFeatureModule {}
 No additional declaration is required for `SchemaManagerComponent`: it is standalone and is exported by the wrapper module. The active template shows DML only; there are no Create Table, Schema Editor, Apply Schema, or DDL Preview entry points.
 
 ### 4. Render it inside an existing page
-Add this selector to the template where the DDL/DML screen should appear:
+Add this selector to the template where the DML screen should appear:
 
 ```html
 <app-schema-manager></app-schema-manager>
@@ -95,7 +95,7 @@ The endpoint names above are illustrative, not confirmed Citi endpoints. Align r
 
 ## Important: sample vs live data
 
-The current visible component is DML-only and still uses `MockDatabaseService` for table reads and CRUD actions, so it is safe to copy/test without contacting real backend services. The DDL UI markup is preserved in `schema-manager-ddl-reference.html`, while its component methods and services remain in place for later re-enablement. The HTTP adapter, infinite datasource, and optimistic helper are bundled but are integration primitives—not yet connected to the visible component's CRUD handlers. To make production changes persist, wire the component to an API-backed repository/facade using Citi's actual endpoint contracts.
+The current visible component is DML-only and still uses `MockDatabaseService` for table reads and CRUD actions, so it is safe to copy/test without contacting real backend services. The previous DDL/DML screen is preserved in `schema-manager-ddl-reference.html` for future use. The DDL UI markup is preserved in `schema-manager-ddl-reference.html`, while its component methods and services remain in place for later re-enablement. The HTTP adapter, infinite datasource, and optimistic helper are bundled but are integration primitives—not yet connected to the visible component's CRUD handlers. To make production changes persist, wire the component to an API-backed repository/facade using Citi's actual endpoint contracts.
 
 For large tables, use the included infinite datasource with AG Grid Community's Infinite Row Model, request 20-row blocks, and implement server-side sorting/filtering/paging. Avoid fetching every row into browser memory.
 
