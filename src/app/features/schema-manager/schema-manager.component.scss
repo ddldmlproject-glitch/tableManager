@@ -227,34 +227,66 @@ button{cursor:pointer}
 /* This feature is intentionally light-themed for now.
    Dark host classes do not override these variables. */
 
-/* Let the feature grow with its content so the MFE/page scroll can reach
-   the table grid, footer, and every section. Avoid a nested 100vh scroller,
-   which can clip content when embedded in the Citi route shell. */
+/*
+ * Embedded MFE viewport:
+ * - Citi's shell owns the outer page and may clip the routed component.
+ * - Reserve space for the Citi header/navigation using a configurable offset.
+ * - Keep the feature header fixed within this panel and scroll the complete
+ *   content section, including the DML grid and footer.
+ * Override --schema-manager-host-offset on the feature host if Citi's shell
+ * chrome is taller/shorter than the default 160px.
+ */
 :host {
   display: block;
-  height: auto;
-  min-height: 0;
-  overflow: visible;
+  box-sizing: border-box;
+  height: calc(100vh - var(--schema-manager-host-offset, 160px));
+  height: calc(100dvh - var(--schema-manager-host-offset, 160px));
+  min-height: 320px;
+  max-height: calc(100dvh - var(--schema-manager-host-offset, 160px));
+  min-width: 0;
+  overflow: hidden;
 }
 
 :host .app {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  height: auto;
-  min-height: 100vh;
-  max-height: none;
-  overflow: visible;
-  overscroll-behavior: auto;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
   background: var(--sm-page-bg);
   color: var(--sm-text);
 }
 
+:host .topbar {
+  flex: 0 0 auto;
+}
+
 :host .content {
-  padding-bottom: 48px;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  padding-bottom: 32px;
 }
 
 :host .footer {
   padding-bottom: 18px;
+}
+
+/* On short viewports preserve access to the bottom instead of clipping the
+   feature to a smaller-than-usable area. */
+@media (max-height: 520px) {
+  :host {
+    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
+    min-height: 260px;
+    max-height: calc(100dvh - 64px);
+  }
 }
 
 :host .page-heading h1,
