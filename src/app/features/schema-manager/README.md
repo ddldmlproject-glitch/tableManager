@@ -1,10 +1,12 @@
-# Copyable DDL/DML Schema Manager feature
+# Copyable DML Schema Manager feature (DDL UI temporarily hidden)
 
 Copy this entire `schema-manager` directory into the existing Citi Angular MFE, for example: `src/app/features/schema-manager/`. Preserve the `models` and `services` subfolders.
 
 ## Included files
 
-- `schema-manager.component.ts/html/css`: DDL schema editor, DML data grid and create-table flow. CSS is component-scoped.
+- `schema-manager.component.ts/html/scss`: DML table-data screen with table selection, search, inline cell edit, insert, edit, and delete.
+- `schema-manager-ddl-reference.html`: the previous combined DDL/DML template preserved for future use. It is not referenced by Angular and does not render in the current DML-only screen.
+- DDL methods, model types, and API helper methods remain in the component/services; no DDL service or model files were deleted.
 - `schema-manager.module.ts`: NgModule wrapper; import one module into the existing MFE.
 - `models/database.models.ts`: strongly typed table/schema models.
 - `services/mock-database.service.ts`: local sample tables and rows (used by this screen today).
@@ -40,7 +42,7 @@ import { SchemaManagerModule } from './features/schema-manager/schema-manager.mo
 export class ExistingFeatureModule {}
 ```
 
-No additional declaration is required for `SchemaManagerComponent`: it is standalone and is exported by the wrapper module.
+No additional declaration is required for `SchemaManagerComponent`: it is standalone and is exported by the wrapper module. The active template shows DML only; there are no Create Table, Schema Editor, Apply Schema, or DDL Preview entry points.
 
 ### 4. Render it inside an existing page
 Add this selector to the template where the DDL/DML screen should appear:
@@ -93,7 +95,7 @@ The endpoint names above are illustrative, not confirmed Citi endpoints. Align r
 
 ## Important: sample vs live data
 
-The visible component still uses `MockDatabaseService` for reads and CRUD actions, so it is safe to copy/test without contacting real backend services. The HTTP adapter, infinite datasource, and optimistic helper are bundled but are integration primitives—not yet connected to the visible component's CRUD handlers. To make production changes persist, wire the component to an API-backed repository/facade using Citi's actual endpoint contracts.
+The current visible component is DML-only and still uses `MockDatabaseService` for table reads and CRUD actions, so it is safe to copy/test without contacting real backend services. The DDL UI markup is preserved in `schema-manager-ddl-reference.html`, while its component methods and services remain in place for later re-enablement. The HTTP adapter, infinite datasource, and optimistic helper are bundled but are integration primitives—not yet connected to the visible component's CRUD handlers. To make production changes persist, wire the component to an API-backed repository/facade using Citi's actual endpoint contracts.
 
 For large tables, use the included infinite datasource with AG Grid Community's Infinite Row Model, request 20-row blocks, and implement server-side sorting/filtering/paging. Avoid fetching every row into browser memory.
 
