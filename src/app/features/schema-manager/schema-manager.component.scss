@@ -227,18 +227,34 @@ button{cursor:pointer}
 /* This feature is intentionally light-themed for now.
    Dark host classes do not override these variables. */
 
-/* Make the full feature independently scrollable even if an MFE content shell
-   constrains or clips its route viewport. */
-:host .app {
-  height: 100vh;
-  max-height: 100dvh;
+/* Let the feature grow with its content so the MFE/page scroll can reach
+   the table grid, footer, and every section. Avoid a nested 100vh scroller,
+   which can clip content when embedded in the Citi route shell. */
+:host {
+  display: block;
+  height: auto;
   min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
-  scrollbar-gutter: stable;
+  overflow: visible;
+}
+
+:host .app {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 100vh;
+  max-height: none;
+  overflow: visible;
+  overscroll-behavior: auto;
   background: var(--sm-page-bg);
   color: var(--sm-text);
+}
+
+:host .content {
+  padding-bottom: 48px;
+}
+
+:host .footer {
+  padding-bottom: 18px;
 }
 
 :host .page-heading h1,
