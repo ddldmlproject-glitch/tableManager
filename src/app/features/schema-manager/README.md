@@ -114,3 +114,7 @@ The standalone project in this repo uses AG Grid 36.2.0. The Citi screenshot sho
 ## Checkbox contrast and DML grid text sizing
 
 The nullable, unique, indexed, and primary-key columns use native read-only HTML checkbox controls inside AG Grid cells, matching the Edit column dialog. This avoids depending on AG Grid's internal checkbox icon font, which can be affected by the Citi host's legacy Quartz CSS. The controls use the same blue accent and remain display-only; edit these properties in the Edit column dialog. The Table data grid uses a 12px body font, 11px header font and 36px row height; the schema metadata grid stays compact. If styles are still overridden in Citi, inspect computed styles for `--ag-checkbox-checked-color` and `--ag-checkbox-unchecked-color` in DevTools.
+
+## Delete confirmation
+
+The DML screen uses an in-app confirmation dialog before deleting a selected row. Opening the dialog does not mutate the row or send a write. **Cancel** closes the dialog and preserves the current row and selection; **Delete row** continues to the existing optimistic delete flow and restores the previous table snapshot if the write fails.
