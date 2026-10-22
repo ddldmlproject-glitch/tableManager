@@ -86,7 +86,8 @@ export class SchemaManagerComponent implements OnInit {
   selectedRow: TableRow | null = null;
   toast = '';
   toastError = false;
-  modal: '' | 'column' | 'row' = '';
+  modal: '' | 'column' | 'row' | 'delete-row' = '';
+  private rowPendingDeletion: TableRow | null = null;
   modalMode: ModalMode = 'add';
   columnDraft: ColumnDefinition = blankColumn(100);
   rowDraft: TableRow = {};
@@ -748,18 +749,41 @@ export class SchemaManagerComponent implements OnInit {
     );
   }
 
+  /**
+   * Open an in-app confirmation first. Nothing is deleted until the user
+   * explicitly confirms; cancel/close leaves the row and selection unchanged.
+   */
   deleteRow(): void {
     if (this.isSaving) return;
     if (!this.selectedRow) {
       this.notify('Select a row in the data grid first.', true);
       return;
     }
-    if (!confirm('Delete the selected row from local sample data?')) return;
+
+    this.rowPendingDeletion = this.selectedRow;
+    this.modal = 'delete-row';
+  }
+
+  cancelDeleteRow(): void {
+    if (this.isSaving) return;
+    this.rowPendingDeletion = null;
+    this.modal = '';
+  }
+
+  confirmDeleteRow(): void {
+    if (this.isSaving || !this.rowPendingDeletion) return;
+
     const before = this.cloneTable(this.table);
-    const selected = this.selectedRow;
+    const selected = this.rowPendingDeletion;
+
+    // Apply the local delete only after confirmation. Existing optimistic
+    // persistence/rollback restores this exact snapshot if the write fails.
     this.table.rows = this.table.rows.filter(row => row !== selected);
     this.refreshVisibleRows();
     this.selectedRow = null;
+    this.rowPendingDeletion = null;
+    this.modal = '';
+
     this.persistOptimistically(
       () => this.restoreTableSnapshot(before),
       'Row deleted from local sample data.',
