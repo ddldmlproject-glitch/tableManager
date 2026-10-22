@@ -92,3 +92,29 @@
     <div class="panel-footer footer-split"><button class="btn" (click)="modal = ''">Cancel</button><button class="btn btn-primary" (click)="saveRow()" [disabled]="isSaving">Save row</button></div>
   </section>
 </div>
+
+<div class="modal-backdrop delete-confirm-backdrop" *ngIf="modal === 'delete-row'">
+  <section
+    class="dialog confirm-dialog"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="delete-row-title"
+    aria-describedby="delete-row-description">
+    <div class="confirm-content">
+      <div class="confirm-icon" aria-hidden="true">!</div>
+      <div class="eyebrow">TABLE DATA / DML</div>
+      <h2 id="delete-row-title">Delete selected row?</h2>
+      <p id="delete-row-description">
+        This will remove the selected row from <strong>{{ table.name }}</strong>.
+        This action cannot be undone after it is saved.
+      </p>
+      <p class="confirm-secondary">Do you want to continue?</p>
+    </div>
+    <div class="confirm-actions">
+      <button class="btn" type="button" (click)="cancelDeleteRow()" [disabled]="isSaving">Cancel</button>
+      <button class="btn btn-confirm-delete" type="button" (click)="confirmDeleteRow()" [disabled]="isSaving">
+        {{ isSaving ? 'Deleting…' : 'Delete row' }}
+      </button>
+    </div>
+  </section>
+</div>
